@@ -20,11 +20,13 @@ b exit
 @ Result is stored in R3, don't use R3 anywhere else
 constant: 
   mov R3, #0    
-  constLoop:    
+  
+  constLoop:  
+    ldrb R7,[R2, R6]  
     cmp R7,#47
     ble constEnd
     cmp R7,#58
-    ble constEnd
+    bge constEnd
 
     mul R8, R3, R9
     mov R3, R8
@@ -41,12 +43,13 @@ constant:
 term:
   sub sp, sp, #4
   str lr, [sp]
-
+  
+  ldrb R7, [R2, R6]
   cmp R7,#40
   bne termElse
     add R6, R6, #1
     @@@ call expression
-    ldr R12, [R5]
+    mov R12, R5
     bl expression
     mov R4,R5
     mov R5, R12
@@ -67,12 +70,13 @@ expression:
   sub sp, sp, #4
   str lr, [sp]
   @@@call term
-  ldr R11, [R4]
+  mov R11, R4
   bl term
   mov R5, R4
   mov R4, R11
 
   expLoop:
+    ldrb R7,[R2, R6]
     cmp R7,#43
     beq addition
     
@@ -86,7 +90,7 @@ expression:
     addition:
       add R6, R6, #1
       @@@ call term
-      ldr R11, [R4]
+      mov R11, R4
       bl term
       add R5, R5, R4
       mov R4, R11
@@ -95,7 +99,7 @@ expression:
     subtract:
       add R6, R6, #1
       @@@ call term
-      ldr R11, [R4]
+      mov R11, R4
       bl term
       add R5, R5, R4
       mov R4, R11
@@ -104,7 +108,7 @@ expression:
     multiplication:
       add R6, R6, #1
       @@@ call term
-      ldr R11, [R4]
+      mov R11, R4
       bl term
       mul R8, R5, R4
       mov R5, R8
@@ -125,5 +129,5 @@ exit:
 
 
   .data
-  myExp: .asciz "1"   @ Describe the expression.
+  myExp: .asciz "1*(2+3)"   @ Describe the expression.
   .end
