@@ -6,6 +6,7 @@ char *p;
 int expression();
 
 int constant(){
+    printf("constant- %c\n",*p);
     int x=0;
     while(*p>='0' && *p<='9')
         x = x*10 + *p++ - '0';
@@ -27,10 +28,12 @@ int term(){
 int expression(){
     int x;
     x=term();
+    printf("term- %d\n",x);
     while(*p == '+' || *p == '-' || *p == '*'){
         if(*p == '+'){
             p++;
             x=x+term();
+            printf("term- %d\n",x);
         }
         else if(*p == '-'){
             p++;
@@ -39,6 +42,7 @@ int expression(){
         else if(*p == '*'){
             p++;
             x=x*term();
+            printf("term- %d\n",x);
         }
     }
    return x; 

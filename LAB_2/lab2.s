@@ -54,6 +54,7 @@ term:
     mov R4,R5
     mov R5, R12
     add R6, R6, #1
+    b termEnd
 
   termElse:
     @@@ call constant
