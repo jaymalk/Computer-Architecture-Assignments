@@ -133,5 +133,5 @@ exit:
 
 
   .data
-  myExp: .asciz "31+12*20-18"   @ Describe the expression.
+  myExp: .asciz "1*(2*(3*(4*(5))))"   @ Describe the expression.
   .end
