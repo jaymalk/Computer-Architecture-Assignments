@@ -7,7 +7,7 @@
 
   mov R0, #Stdout        @ Set the output mode
   ldr R2, =myExp         @ Load the expression = p
-  mov R5, #0             @stores the result
+  mov R5, #0             @stores the result of Expression function 
   mov R6, #0             @position in string
   ldrb R7,[R2, R6]       @It is character in string
   mov R8, #0             @ Variable for multiplication storage
@@ -17,7 +17,8 @@
 bl expression
 b exit
 
-@ Result is stored in R3, don't use R3 anywhere else
+@No need to temporarily store value of R3 in stack.
+@ Result is stored in R3, Don't use R3 anywhere else.
 constant: 
   mov R3, #0    
   
@@ -39,7 +40,8 @@ constant:
   constEnd:
     mov pc, lr
 
-@Result is stored in R4, R12 is temp variable to store R5
+@ Result is stored in R4, stack is used to temporarily
+@ store the value of R5 before calling expression.
 term:
   sub sp, sp, #8
   str lr, [sp]
@@ -66,7 +68,8 @@ term:
     mov pc,lr
 
 
-@Result is stored in R5, R11 is temp variable to store R4
+@ Result is stored in R4, stack is used to temporarily
+@ store the value of R4 before calling any other function.
 expression:
   sub sp, sp, #8
   str lr, [sp]
@@ -130,5 +133,5 @@ exit:
 
 
   .data
-  myExp: .asciz "4*(3+4*(2+3))+8"   @ Describe the expression.
+  myExp: .asciz "7*((2+3)*8)"   @ Describe the expression.
   .end
