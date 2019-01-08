@@ -75,5 +75,5 @@ exit:
 
 @@@== DATA =====================================================
   .data
-  myExp: .asciz "0123-0*0"   @ Describe the expression.
+  myExp: .asciz "31+12*20-18"   @ Describe the expression.
   .end

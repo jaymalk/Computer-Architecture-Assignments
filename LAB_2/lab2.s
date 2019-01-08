@@ -105,7 +105,7 @@ expression:
       @@@ call term
       str R4, [sp, #4]
       bl term
-      add R5, R5, R4
+      sub R5, R5, R4
       ldr R4, [sp, #4]
       b expLoop
     
@@ -133,5 +133,5 @@ exit:
 
 
   .data
-  myExp: .asciz "7*((2+3)*8)"   @ Describe the expression.
+  myExp: .asciz "31+12*20-18"   @ Describe the expression.
   .end
