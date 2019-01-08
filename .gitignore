@@ -1,3 +1,5 @@
 .DS_Store
 *.swp
+
+## For ignoring all binary files. The compiled files should start with [exe_]
 */exe_*
