@@ -41,7 +41,7 @@ constant:
 
 @Result is stored in R4, R12 is temp variable to store R5
 term:
-  sub sp, sp, #4
+  sub sp, sp, #8
   str lr, [sp]
   
   ldrb R7, [R2, R6]
@@ -49,10 +49,10 @@ term:
   bne termElse
     add R6, R6, #1
     @@@ call expression
-    mov R12, R5
+    str R5, [sp, #4]
     bl expression
     mov R4,R5
-    mov R5, R12
+    ldr R5, [sp,#4]
     add R6, R6, #1
     b termEnd
 
@@ -62,19 +62,19 @@ term:
     mov R4, R3
   termEnd:
     ldr lr,[sp]
-    add sp, sp, #4
+    add sp, sp, #8
     mov pc,lr
 
 
 @Result is stored in R5, R11 is temp variable to store R4
 expression:
-  sub sp, sp, #4
+  sub sp, sp, #8
   str lr, [sp]
   @@@call term
-  mov R11, R4
+  str R4, [sp, #4]
   bl term
   mov R5, R4
-  mov R4, R11
+  ldr R4, [sp, #4]
 
   expLoop:
     ldrb R7,[R2, R6]
@@ -91,34 +91,34 @@ expression:
     addition:
       add R6, R6, #1
       @@@ call term
-      mov R11, R4
+      str R4, [sp, #4]
       bl term
       add R5, R5, R4
-      mov R4, R11
+      ldr R4, [sp, #4]
       b expLoop
     
     subtract:
       add R6, R6, #1
       @@@ call term
-      mov R11, R4
+      str R4, [sp, #4]
       bl term
       add R5, R5, R4
-      mov R4, R11
+      ldr R4, [sp, #4]
       b expLoop
     
     multiplication:
       add R6, R6, #1
       @@@ call term
-      mov R11, R4
+      str R4, [sp, #4]
       bl term
       mul R8, R5, R4
       mov R5, R8
-      mov R4, R11
+      ldr R4, [sp, #4]
       b expLoop
 
   expressionEnd:
     ldr lr,[sp]
-    add sp, sp, #4
+    add sp, sp, #8
     mov pc,lr
 
 
@@ -130,5 +130,5 @@ exit:
 
 
   .data
-  myExp: .asciz "1*(2*(3*4*5))"   @ Describe the expression.
+  myExp: .asciz "4*(3+4*(2+3))+8"   @ Describe the expression.
   .end
