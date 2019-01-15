@@ -1,8 +1,6 @@
 .extern expression
 
     .equ SWI_Open, 0x66        @open a file
-    .equ SWI_Close,0x68        @close a file
-    .equ SWI_PrChr,0x00        @ Write an ASCII char to Stdout
     .equ SWI_PrInt,0x6b        @ Write an Integer
     .equ SWI_PrStr, 0x69       @ Write a null-ending string 
     .equ Stdout,  1            @ Set output target to be Stdout
@@ -11,89 +9,63 @@
 
 .text
     _start:
-        @ Input the expression file
-        ldr r0,=InFileName
-        mov r1,#0
-        swi SWI_Open
+        ldr r0,=InFileName                      @ Input the file
+        mov r1,#0                               @ Set mode to open
+        swi SWI_Open                            @ Open file
 
-        ldr r1,=InputFileHandle   @ if OK, load input file handle
-        str r0,[r1]               @ save the file handle
-
-@ == Read integers until end of file =============================
-RLoop:
-ldr r0,=InputFileHandle   @ load input file handle
-ldr r1,=CharArray
-mov r2, #80
-ldr r0,[r0]
-swi SWI_RdStr             @ read the integer into R0
-bcs _exit       @ Check Carry-Bit (C): if= 1 then EOF reached
-@ print the integer to Stdout
-mov r11, r1
-mov R0,#Stdout            @ target is Stdout
-swi SWI_PrStr
-mov R0,#Stdout            @ print new line
-ldr r1, =ans
-swi SWI_PrStr
-        mov r2, r11
-        mov r5, #0
-        mov r6, #0
-        ldrb r7, [r2, r6]
-        mov r8, #0
-        mov r9, #10
-        bl expression
-        mov r1, r5
-        swi SWI_PrInt
-        mov R0,#Stdout            @ print new line
-ldr r1, =NL
-swi SWI_PrStr
-bal RLoop                 @ keep reading till end of fil
+        ldr r1,=InputFileHandle                 @ Store the file handle
+        str r0,[r1]
 
 
+    ReadLoop:
+        @ Loop till EOF
 
-        mov r2, r1
-        mov r5, #0
-        mov r6, #0
-        ldrb r7, [r2, r6]
-        mov r8, #0
-        mov r9, #10
-        bl expression
-        mov r1, r5
-        @ mov r0, #Stdout
-        @ swi SWI_PrInt
-        @ bcs _exit
-        @ b _loop
+        ldr r0,=InputFileHandle                 
+        ldr r1,=CharArray                       @ Load the address
+        mov r2, #80                             @ Provide data limit
+        ldr r0,[r0]                             @ Load the handle
+        swi SWI_RdStr                           @ Read String (Line)
+        bcs _exit                               @ Exit if EOF
 
-    @     ldr r0,=InputFileHandle
-    @     mov r2, #100
-    @     swi SWI_RdStr
-    @     mov r0, #Stdout
-    @     swi SWI_PrStr
+        mov r11, r1                             @ Store string for expression
+        mov R0,#Stdout                          @ Change to output mode
+        swi SWI_PrStr                           @ Print expression
+        ldr r1, =ANS
+        swi SWI_PrStr
+            @ Preset for expression call
 
-        @ mov r2, r1
-        @ mov r5, #0
-        @ mov r6, #0
-        @ ldrb r7, [r2, r6]
-        @ mov r8, #0
-        @ mov r9, #10
-        @ bl expression
-        @ mov r1, r5
-        @ mov r0, #Stdout
-        @ swi SWI_PrInt
+            mov r2, r11                         @ Reload expression stored before
+            mov r5, #0
+            mov r6, #0
+            ldrb r7, [r2, r6]
+            mov r8, #0
+            mov r9, #10
+            bl expression                       @ Call expression
+            mov r1, r5                          @ Move answer to R1
+        swi SWI_PrInt                           @ Print answer
+        mov R0,#Stdout
+        ldr r1, =NL
+        swi SWI_PrStr
+        swi SWI_PrStr
+        bal ReadLoop                            @ Loop back
+
+
 
     _exit:
+    @ Print exit statement
+    
         mov r0, #Stdout
-        ldr r1,=end
+        ldr r1,=EOF
         swi SWI_PrStr
 
 .data
 .align
-    InputFileHandle:   .skip  1000
-    CharArray:         .skip  80
+    InputFileHandle:   .skip  10000
+    CharArray:         .skip  100
     InFileName:        .asciz "expr.txt"
     FileOpenInpErrMsg: .asciz "Failed to open input file \n"
-    EndOfFileMsg:      .asciz "End"
     ColonSpace:        .asciz " : "
-    ans:               .asciz "\nAnswer : "
-    end:               .asciz "Thanks"
+    ANS:               .asciz "\nAnswer : "
+    EOF:               .asciz "End of File"
     NL:                .asciz "\n"
 .end
