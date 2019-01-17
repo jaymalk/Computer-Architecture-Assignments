@@ -106,7 +106,7 @@ fgets:	stmfd	sp!, {r1-r4,lr}
 	mov	r1, r3
 	mov	r3, r2
 1:	sub	r4, r4, #1
-	ble	3f		@ jump if buffer has been filled
+	@ble	3f		@ jump if buffer has been filled
 	str	r3, [r1,#4]
 2:	mov	r0, #0x06	@ read operation
 	swi	0x123456

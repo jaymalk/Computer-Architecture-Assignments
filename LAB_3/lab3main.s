@@ -12,11 +12,14 @@
 
 _start:
     loop:
+    ldr R0, =inputMessage
+    bl prints
     ldr R0, =bufferSpace
     mov R1, #100
     mov R2, R10
     bl fgets
-    cmp R0,#0
+    ldrb R7,[R0, #0]
+    cmp R7, #10
     beq exit
     mov R2, R0             @ Load the expression in R2
     mov R5, #0             @stores the result of Expression function
@@ -33,6 +36,8 @@ _start:
     
     bl itoa
     bl prints
+
+    b loop
 
 
     
