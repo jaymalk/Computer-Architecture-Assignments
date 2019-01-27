@@ -141,5 +141,6 @@ begin
             end if;
         end if;
 
+    addr_PrMemory <= pc;
     end process;
 end Behavioral;
