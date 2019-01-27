@@ -1,0 +1,22 @@
+The submission contains two vhd files:
+
+(1) datatype.vhd- It contains a package(data_type) declaration.
+                  This package has datatype of various memory elements.
+                  For e.g. Register File's datatype is an array
+                  of 16 std_logic_vectors of 32 bits.
+
+                  It also other type decalarations such as what are instruction_class_type
+                  and decoded instruction type.
+
+(2) cpu.vhd-  It is the main file.
+              It contains concurrent combinational statements
+              which decodes the instruction.
+              Now after knowing what kind of instruction is to be exceuted,
+              a clocked sequential process executes the instruction
+              and sets various other parameters accordingly, which
+              defines the next state.
+
+Instructions are decoded as per the pdf file "Instruction encoding for Lab4".
+
+Data Memory contents are not to be changed in this assignment
+and hence nothing is done with data_in.

@@ -3,3 +3,5 @@
 
 ## For ignoring all binary files. The compiled files should start with [exe_]
 */exe_*
+
+*.zip
