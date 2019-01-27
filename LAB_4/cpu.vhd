@@ -4,11 +4,11 @@ use work.data_type.all;
 
 
 entity cpu is
-    Port (clk, reset: in std_logic,
-          instruction, data_in: in std_logic_vector(31 downto 0)
+    Port (clk, reset: in std_logic;
+          instruction, data_in: in std_logic_vector(31 downto 0);
 
-          addr_prMemory, addr_dataMemory: out integer,
-          data_out: out std_logic_vector(31 down to 0),
+          addr_prMemory, addr_dataMemory: out integer;
+          data_out: out std_logic_vector(31 down to 0);
           wr_enb: out bit
           );
 end cpu;
@@ -22,8 +22,8 @@ architecture Behavioral of cpu is
     signal instr_class: instr_class_type;
     signal i_decoded: i_decoded_type := unknown;
     
-    signal rm <= std_logic_vector(31 downto 0);
-    signal rd, rn <= integer;
+    signal rm: std_logic_vector(31 downto 0);
+    signal rd, rn: integer;
     signal is_reg, is_plus_offset: std_logic :='0';
     signal p, u, b, w: std_logic;
 
@@ -31,7 +31,7 @@ architecture Behavioral of cpu is
     signal data_memory: data_memory_type;
 
     signal pc: integer := 0;
-    signal flag_Z <= std_logic;
+    signal flag_Z: std_logic;
 begin
 
     cond <= instruction(31 downto 28);
@@ -132,7 +132,7 @@ begin
                 if(i_decoded = b) then
                     pc <= to_integer(unsigned(rm));
                 elsif((i_decoded = beq) and (flag_Z = '1') ) then
-                    pc <= to_integer(unsigned(rm));;
+                    pc <= to_integer(unsigned(rm));
                 elsif((i_decoded = beq) and (flag_Z = '0') ) then
                     pc <= to_integer(unsigned(rm));
                 else
