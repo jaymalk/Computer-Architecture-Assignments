@@ -112,9 +112,9 @@ begin
                         pc <= pc+1;
     
                     elsif(i_decoded = cmp) then
-                        RF(rd) <= std_logic_vector(unsigned(RF(rn)) - unsigned(rm));
+--                        RF(rd) <= std_logic_vector(unsigned(RF(rn)) - unsigned(rm));
                         
-                        if(RF(rd) = "00000000000000000000000000000000") then
+                        if(RF(rn) = rm) then
                             flag_Z <= '1';
                         else
                             flag_Z <= '0';
