@@ -8,6 +8,7 @@ entity cpu is
     Port (tclk, reset: in std_logic;
           instruction, data_in: in std_logic_vector(31 downto 0);
           PCinitializer: in integer;
+          step, go: in std_logic;
           addr_prMemory, addr_data_memory: out integer;
           data_out: out std_logic_vector(31 downto 0);
           wr_enb: out std_logic;
@@ -35,6 +36,9 @@ architecture Behavioral of cpu is
 
     signal pc: integer := 0;
     signal flag_Z: std_logic;
+    
+    type state_type is (initial, cont, onestep, done);
+    signal state: state_type := initial;
 begin
 
     cond <= instruction(31 downto 28);
@@ -90,26 +94,46 @@ begin
               "111111" & instruction(23 downto 0) & "00"
               when (F_field = "10" and instruction(23) = '1');
               
+     process(tclk)
+     begin                
+        if(tclk'Event and tclk = '1') then
+            case state is
+                when initial => if(go='1') then state <= cont; 
+                                elsif(step='1') then state <= onestep; 
+                                elsif(reset='1' or (step='0' and go='0')) then state <= initial;
+                                end if;
+                when cont =>  if(instruction="00000000000000000000000000000000") then state<=done; 
+                              else state<=cont;
+                              end if;
+                when done => if(step='0' and go='0') then state<=initial; 
+                             elsif(step='1' or go='1') then state<=done;
+                             end if;
+                when onestep => state<=done;
+            end case;
+        end if;
+     end process;
+              
     process(tclk)
     begin
             
             if (reset='1') then
                 pc <= PCinitializer;
-    
+                
             elsif(tclk='1' and tclk'event) then
                 
                 if(instr_class = DP) then
     
                     if(i_decoded = add) then
                         RF(rd) <= std_logic_vector(unsigned(RF(rn)) + unsigned(rm));
-                        pc <= pc+1;
+                        if(state=cont or state=onestep) then pc <= pc+1; end if;
+                   
                     elsif(i_decoded = sub) then
                         RF(rd) <= std_logic_vector(unsigned(RF(rn)) - unsigned(rm));
-                        pc <= pc+1;
+                        if(state=cont or state=onestep) then pc <= pc+1; end if;
     
                     elsif(i_decoded = mov) then
                         RF(rd) <= rm;
-                        pc <= pc+1;
+                        if(state=cont or state=onestep) then pc <= pc+1; end if;
     
                     elsif(i_decoded = cmp) then
 --                        RF(rd) <= std_logic_vector(unsigned(RF(rn)) - unsigned(rm));
@@ -120,7 +144,7 @@ begin
                             flag_Z <= '0';
                         end if;
     
-                        pc <= pc+1;
+                        if(state=cont or state=onestep) then pc <= pc+1; end if;
                     else
                     end if;
     
@@ -133,28 +157,28 @@ begin
                         else
                             RF(rd) <= data_in;
                             call_ldr <= '0';
-                            pc <= pc+1;
+                            if(state=cont or state=done) then pc <= pc+1; end if;
                         end if;
                     elsif(i_decoded = str) then
                         wr_enb <= '1';
                         data_out<=RF(rd);
                         addr_data_memory <= to_integer(signed(RF(rn))) + to_integer(signed(rm)) ;
-                        pc <= pc+1;
+                        if(state=cont or state=onestep) then pc <= pc+1; end if;
                     else
-                        pc <= pc+1;
+                        if(state=cont or state=onestep) then pc <= pc+1; end if;
                     end if;
     
                     
                 elsif(instr_class = branch) then
                                     
                     if(i_decoded = b) then
-                        pc <= pc + 2 + (to_integer(signed(rm))/4);
+                       if(state=cont or state=onestep) then pc <= pc + 2 + (to_integer(signed(rm))/4); end if;
                     elsif((i_decoded = beq) and (flag_Z = '1') ) then
-                        pc <= pc + 2 + (to_integer(signed(rm))/4);
+                       if(state=cont or state=onestep) then pc <= pc + 2 + (to_integer(signed(rm))/4); end if;
                     elsif((i_decoded = bne) and (flag_Z = '0') ) then
-                        pc <= pc + 2 + (to_integer(signed(rm))/4);
+                       if(state=cont or state=onestep) then  pc <= pc + 2 + (to_integer(signed(rm))/4); end if;
                     else
-                        pc <= pc + 1;
+                        if(state=cont or state=onestep) then pc <= pc+1; end if;
                     end if;
                 else
                 end if;

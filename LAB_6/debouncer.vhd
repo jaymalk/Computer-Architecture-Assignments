@@ -14,7 +14,7 @@ begin
     process(clk)
     begin
         if rising_edge(clk) then
-            output <= input
+            output <= input;
         end if;
     end process;
 end architecture arch_debouncer;

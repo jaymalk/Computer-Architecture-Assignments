@@ -6,17 +6,18 @@ use work.data_type.all;
 entity TestBench is
     port (
     tclk : in std_logic;
-    selectProgram : in std_logic_vector(3 downto 0);
+    selectProgram : in std_logic_vector(2 downto 0);
     resetButton, stepButton, goButton : in std_logic;
     lur : in std_logic; --LoadUpperRegisterForOutput
-    LEDoutput : out std_logic_vector(16 downto 0)
+    regNo: in std_logic_vector(3 downto 0);
+    LEDoutput : out std_logic_vector(15 downto 0)
     );
 end TestBench;
 
 architecture test of TestBench is
-    signal reset : std_logic := '1';
+    signal reset : std_logic;
     signal step, go : std_logic := '0';
-    signal 100hzClock : std_logic;
+    signal hundredHzClock : std_logic;
     signal we : std_logic;
     signal pc, addr_data_memory : integer;
     signal dt_addr, pr_addr : std_logic_vector(7 downto 0);
@@ -44,6 +45,7 @@ architecture test of TestBench is
       Port (tclk, reset: in std_logic;
         PCinitializer: in integer;
         instruction, data_in: in std_logic_vector(31 downto 0);
+        step, go: in std_logic;
         addr_prMemory, addr_data_memory: out integer;
         data_out: out std_logic_vector(31 downto 0);
         wr_enb: out std_logic;
@@ -52,22 +54,27 @@ architecture test of TestBench is
     end COMPONENT;
         
     COMPONENT clockDivider
-        Port (clk, reset : in std_logic;
+        Port (clk : in std_logic;
+              reset : in std_logic;
             output : out std_logic);
     END COMPONENT;
 
 begin
-
-    100hzclk: clockDivider
+    
+    with lur select LEDoutput <=
+        dummyRF(to_integer(unsigned(regNo)))(31 downto 16) when '1',
+        dummyRF(to_integer(unsigned(regNo)))(15 downto 0) when others;
+        
+    hundredHzclk: clockDivider
        PORT MAP(
        clk => tclk,
        reset => reset,
-       output => 100hzClock
+       output => hundredHzClock
        );
 
-    reset: entity  work.debouncer(arch_debouncer) port map(resetButton, 100hzClock, reset);
-    step: entity  work.debouncer(arch_debouncer) port map(stepButton, 100hzClock, step);
-    go: entity  work.debouncer(arch_debouncer) port map(goButton, 100hzClock, go);
+    resetComponent: entity  work.debouncer(arch_debouncer) port map(resetButton, hundredHzClock, reset);
+    stepComponent: entity  work.debouncer(arch_debouncer) port map(stepButton, hundredHzClock, step);
+    goComponent: entity  work.debouncer(arch_debouncer) port map(goButton, hundredHzClock, go);
     
     pr_addr <= std_logic_vector(to_unsigned(pc, 8));
     
@@ -86,6 +93,8 @@ begin
         PCinitializer => PCinitializer,
         instruction => instr,
         data_in => data_memory_out,
+        step => step,
+        go => go,
         addr_prMemory => pc,
         addr_data_memory => addr_data_memory,
         data_out => data_memory_in,
@@ -105,14 +114,5 @@ begin
         spo => data_memory_out
     );
     
-    process
-    begin
-        reset <= '1';
-        wait until tclk = '1' and tclk'event;
-        reset <= '0';
-        for i in 1 to 10000 loop
-            wait until tclk = '1' and tclk'event;
-        end loop;
-    end process;
 
 end test ;
