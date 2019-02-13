@@ -84,7 +84,7 @@ begin
         spo => instr
     );
     
-    PCinitializer <= 32 * to_integer(unsigned(selectProgram));
+    PCinitializer <= ((32) * to_integer(unsigned(selectProgram)));
 
     ourCPU: cpu
         PORT MAP(

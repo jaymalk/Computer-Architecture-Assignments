@@ -13,11 +13,8 @@ architecture archClockDivider of clockDivider is
   signal temp: std_logic := '1';
 begin
     process(clk)
-    begin
-        if(reset = '1') then
-            temp<='0';
-            counter<=0;         
-        elsif(clk = '1' and clk'event) then
+    begin         
+        if(clk = '1' and clk'event) then
             if(counter = 500000) then
                 temp <= '0';
 		        counter <= counter+1;

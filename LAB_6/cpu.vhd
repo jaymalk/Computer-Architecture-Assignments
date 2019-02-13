@@ -115,7 +115,6 @@ begin
               
     process(tclk)
     begin
-            
             if (reset='1') then
                 pc <= PCinitializer;
                 
