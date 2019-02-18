@@ -102,11 +102,13 @@ begin
                                 elsif(step='1') then state <= onestep; 
                                 elsif(reset='1' or (step='0' and go='0')) then state <= initial;
                                 end if;
-                when cont =>  if(instruction="00000000000000000000000000000000") then state<=done; 
+                when cont =>  if(instruction="00000000000000000000000000000000") then state<=done;
+                              elsif(reset='1') then state <= initial; 
                               else state<=cont;
                               end if;
                 when done => if(step='0' and go='0') then state<=initial; 
                              elsif(step='1' or go='1') then state<=done;
+                             elsif(reset='1') then state <= initial;
                              end if;
                 when onestep => state<=done;
             end case;
@@ -153,6 +155,7 @@ begin
                         if(call_ldr = '0') then
                             addr_data_memory <= to_integer(signed(RF(rn))) + to_integer(signed(rm));
                             call_ldr <= '1';
+                            wr_enb <= '0';
                         else
                             RF(rd) <= data_in;
                             call_ldr <= '0';
