@@ -4,7 +4,7 @@ use IEEE.NUMERIC_STD.ALL;
 use work.Data_Type.all;
 
 
-entity Multi_Cycle_CPU is
+entity CPU_MULTI is
     Port (
             -- Input Parameters
             main_clock, reset: in std_logic;
@@ -17,10 +17,10 @@ entity Multi_Cycle_CPU is
             wr_enb: out std_logic;
             dummyRF: out register_file_type
           );
-end Multi_Cycle_CPU;
+end CPU_MULTI;
 
 
-architecture Behavioral of Multi_Cycle_CPU is
+architecture Behavioral of CPU_MULTI is
 
     -- Signal for capturing conditiona and opcode
     signal Condition, Opcode: std_logic_vector(3 downto 0);
@@ -49,6 +49,9 @@ architecture Behavioral of Multi_Cycle_CPU is
     -- Value associated with the third operand (RM or llM)
     signal RM_val: std_logic_vector(31 downto 0);
 
+    -- Values held by RM and RN (which may be used by ALU)
+    signal A, B : std_logic_vector(31 downto 0);
+
     signal RF: register_file_type;
 
     -- Signal represting the program counter (PC)
@@ -57,9 +60,13 @@ architecture Behavioral of Multi_Cycle_CPU is
     -- Signal for keeping in check the Z Flag
     signal Zero_Flag: std_logic;
     
-    -- State signal and types for the CPU controller FSM
-    type state_type is (initial, cont, oneinstr, onestep, done);
-    signal state: state_type := initial;
+    -- State signal and types for the CPU tester FSM
+    type flow_type is (initial, cont, oneinstr, onestep, done);
+    signal flow: flow_type := initial;
+
+    -- State signal and types for CPU controller FSM (cycle stage)
+    type stage_type is (common_first, common_second, third, fourth, fifth_ldr, rest);
+    signal stage : stage_type := rest;
 
 begin
 
@@ -77,9 +84,9 @@ begin
     Write_Back <= instruction(21);
     Load_Store <= instruction(20);
 
-    -- RN and RD
+    -- RN and RD (register address)
     RN <= instruction(19 downto 16);
-    RD <= instruction(15 downto 12);
+    RD <= instruction(15 downto 12); 
 
     -- Shift specification and opcodes
     Shift <= instruction(11 downto 4);
@@ -132,97 +139,153 @@ begin
     
 
     -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
+        -- Needs to be modified for other 'oneinstr' function, which shall work with multicycle instruction format
      process(main_clock)
      begin                
         if(main_clock'Event and main_clock = '1') then
-            case state is
-                when initial => if(go='1') then state <= cont; 
-                                elsif(step='1') then state <= onestep; 
-                                elsif(reset='1' or (step='0' and go='0')) then state <= initial;
+            case flow is
+                when initial => if(go='1') then flow <= cont; 
+                                elsif(step='1') then flow <= onestep; 
+                                elsif(reset='1' or (step='0' and go='0')) then flow <= initial;
                                 end if;
-                when cont =>  if(instruction="00000000000000000000000000000000") then state<=done;
-                              elsif(reset='1') then state <= initial; 
-                              else state<=cont;
+                when cont =>  if(instruction="00000000000000000000000000000000") then flow<=done;
+                              elsif(reset='1') then flow <= initial; 
+                              else flow<=cont;
                               end if;
-                when done => if(step='0' and go='0') then state<=initial; 
-                             elsif(step='1' or go='1') then state<=done;
-                             elsif(reset='1') then state <= initial;
+                when done => if(step='0' and go='0') then flow<=initial; 
+                             elsif(step='1' or go='1') then flow<=done;
+                             elsif(reset='1') then flow <= initial;
                              end if;
-                when onestep => state<=done;
+                when onestep => flow<=done;
             end case;
         end if;
      end process;
     
     -- MAIN WORKING FOR THE CPU (ALU)
-    process(main_clock)
-    begin
-            if (reset='1') then
-                PC <= PC_Start;
+                -- NEW MULTI CYCLE CODE
+                -- BASIC AND CRUDE OUTER STRUCTURE ONLY
+                -- FOR NOW TESTING FSM IS IGNORED (THESE CAN BE ADDED EASILY LATER ON)
+        process(main_clock)
+        begin
+                if(reset='1')
+                    PC <= PC_Start;
                 
-            elsif(main_clock='1' and main_clock'event) then
-                
-                if(class = DP) then
-    
-                    if(current_ins = add) then
-                        RF(RD) <= std_logic_vector(unsigned(RF(RN)) + unsigned(RM_val));
-                        if(state=cont or state=onestep) then PC <= PC+1; end if;
-                   
-                    elsif(current_ins = sub) then
-                        RF(RD) <= std_logic_vector(unsigned(RF(RN)) - unsigned(RM_val));
-                        if(state=cont or state=onestep) then PC <= PC+1; end if;
-    
-                    elsif(current_ins = mov) then
-                        RF(RD) <= RM_val;
-                        if(state=cont or state=onestep) then PC <= PC+1; end if;
-    
-                    elsif(current_ins = cmp) then
---                        RF(RD) <= std_logic_vector(unsigned(RF(RN)) - unsigned(RM_val));
+                elsif(main_clock='1' and main_clock'event) then
+                    
+                    case stage is
+
+                        when common_first => 
+                            PC <= PC+1;             
+                            -- Some problem related to this. This might change instruction for further stages.
+                            -- Need to review the working of instruction memory (IM and DM are different for now).
+                            stage <= common_second;
                         
-                        if(RF(RN) = RM_val) then
-                            Zero_Flag <= '1';
-                        else
-                            Zero_Flag <= '0';
-                        end if;
+                        when common_second =>
+                            -- Putting the values from RM and RD in A and B
+                            A <= RF(to_integer(unsigned(RN)));
+                            B <= RM_val; 
+                            stage <= third;
+                        
+                        when third =>
+                            if(class = DP) then
+                                    -- All cases now on are blanks as need to discuss an RF module to be used in working.
+                                    -- These will be filled with that
+                            elsif(class = DT) then
+
+                            elsif(class = branch) then
+
+                            else    -- Should not be reached
+                            end if;
+                            stage <= fourth;
+                        
+                        when fourth =>
+                            if(class = DP) then
+                            
+                            elsif(current_ins = str) then
+                            
+                            elsif(current_ins = ldr) then
+                            
+                            else
+                            end if;
+                            stage <= common_first; -- Load new instruction !
+                            -- There must be a rest state as well review
+                        when others =>
+                            -- Should not be reached
+                    end case;
+                end if;
+        end process;
+
+                -- OLD SINGLE CYCLE CODE
+--     process(main_clock)
+--     begin
+--             if (reset='1') then
+--                 PC <= PC_Start;
+                
+--             elsif(main_clock='1' and main_clock'event) then
+                
+--                 if(class = DP) then
     
-                        if(state=cont or state=onestep) then PC <= PC+1; end if;
-                    else
-                    end if;
+--                     if(current_ins = add) then
+--                         RF(RD) <= std_logic_vector(unsigned(RF(RN)) + unsigned(RM_val));
+--                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
+                   
+--                     elsif(current_ins = sub) then
+--                         RF(RD) <= std_logic_vector(unsigned(RF(RN)) - unsigned(RM_val));
+--                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
     
-                elsif(class = DT) then
-                    if(current_ins = ldr) then
-                        --RF(RD) <= data_memory(RN + to_integer(signed(RM_val)));
-                        if(call_ldr = '0') then
-                            addr_data_memory <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val));
-                            call_ldr <= '1';
-                            wr_enb <= '0';
-                        else
-                            RF(RD) <= data_in;
-                            call_ldr <= '0';
-                            if(state=cont or state=done) then PC <= PC+1; end if;
-                        end if;
-                    elsif(current_ins = str) then
-                        wr_enb <= '1';
-                        data_out<=RF(RD);
-                        addr_data_memory <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val)) ;
-                        if(state=cont or state=onestep) then PC <= PC+1; end if;
-                    else
-                        if(state=cont or state=onestep) then PC <= PC+1; end if;
-                    end if;
+--                     elsif(current_ins = mov) then
+--                         RF(RD) <= RM_val;
+--                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
+    
+--                     elsif(current_ins = cmp) then
+-- --                        RF(RD) <= std_logic_vector(unsigned(RF(RN)) - unsigned(RM_val));
+                        
+--                         if(RF(RN) = RM_val) then
+--                             Zero_Flag <= '1';
+--                         else
+--                             Zero_Flag <= '0';
+--                         end if;
+    
+--                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
+--                     else
+--                     end if;
+    
+--                 elsif(class = DT) then
+--                     if(current_ins = ldr) then
+--                         --RF(RD) <= data_memory(RN + to_integer(signed(RM_val)));
+--                         if(call_ldr = '0') then
+--                             addr_data_memory <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val));
+--                             call_ldr <= '1';
+--                             wr_enb <= '0';
+--                         else
+--                             RF(RD) <= data_in;
+--                             call_ldr <= '0';
+--                             if(flow=cont or flow=done) then PC <= PC+1; end if;
+--                         end if;
+--                     elsif(current_ins = str) then
+--                         wr_enb <= '1';
+--                         data_out<=RF(RD);
+--                         addr_data_memory <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val)) ;
+--                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
+--                     else
+--                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
+--                     end if;
     
                     
-                elsif(class = branch) then
+--                 elsif(class = branch) then
                                     
-                    if(current_ins = b) then
-                       if(state=cont or state=onestep) then PC <= PC + 2 + (to_integer(signed(RM_val))/4); end if;
-                    elsif((current_ins = beq) and (Zero_Flag = '1') ) then
-                       if(state=cont or state=onestep) then PC <= PC + 2 + (to_integer(signed(RM_val))/4); end if;
-                    elsif((current_ins = bne) and (Zero_Flag = '0') ) then
-                       if(state=cont or state=onestep) then  PC <= PC + 2 + (to_integer(signed(RM_val))/4); end if;
-                    else
-                        if(state=cont or state=onestep) then PC <= PC+1; end if;
-                    end if;
-                else
-                end if;
-            end if;
-    end process;
+--                     if(current_ins = b) then
+--                        if(flow=cont or flow=onestep) then PC <= PC + 2 + (to_integer(signed(RM_val))/4); end if;
+--                     elsif((current_ins = beq) and (Zero_Flag = '1') ) then
+--                        if(flow=cont or flow=onestep) then PC <= PC + 2 + (to_integer(signed(RM_val))/4); end if;
+--                     elsif((current_ins = bne) and (Zero_Flag = '0') ) then
+--                        if(flow=cont or flow=onestep) then  PC <= PC + 2 + (to_integer(signed(RM_val))/4); end if;
+--                     else
+--                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
+--                     end if;
+--                 else
+--                 end if;
+--             end if;
+--     end process;
+
 end Behavioral;
