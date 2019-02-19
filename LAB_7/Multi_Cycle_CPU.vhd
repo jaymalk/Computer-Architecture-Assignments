@@ -76,7 +76,7 @@ architecture Behavioral of CPU_MULTI is
     signal Zero_Flag: std_logic;
     
     -- State signal and types for the CPU tester FSM
-    type flow_type is (initial, cont, oneinstr, onestep, oneinstr, done);
+    type flow_type is (initial, cont, onestep, oneinstr, done);
     signal flow: flow_type := initial;
 
     -- Red flag signal to decide the current position in an instruction
@@ -230,7 +230,7 @@ begin
 
                 when done =>    if(step = '0' and go = '0') then 
                                     flow <= initial; 
-                                elsif(step = '1' or go = '1') then 
+                                elsif(step = '1' or go = '1' or instr = '1') then 
                                     flow <= done;
                                 elsif(reset = '1') then 
                                     flow <= initial;
@@ -318,14 +318,10 @@ begin
                                 ALU_ON <= '0';
 
                                 if(class = DP) then
-                                    -- Set red flag for 'oneinstr'
-                                    red_flag = '1';
                                     -- Save the result from ALU to the desired register
                                     RF(to_integer(unsigned(RD))) <= result_from_ALU;
 
                                 elsif(current_ins = str) then
-                                    -- Set red flag for 'oneinstr'
-                                    red_flag = '1';
                                     Data_To_DM <= RF(to_integer(unsigned(RD)));
                                     Address_To_DM <= to_integer(unsigned(result_from_ALU));
 
@@ -334,6 +330,8 @@ begin
                                 end if;
                                 -- Go to next stage
                                 stage <= fifth_ldr;
+                                -- Since red flag is one cycle late
+                                red_flag <= '1';
                             end if;
 
                         -- Fifth stage (only for ldr instruction)
@@ -342,10 +340,8 @@ begin
                             if(current_ins = ldr) then
                                 RF(to_integer(unsigned(RD))) <= Data_From_DM;
                             end if;
-                            red_flag <= 1;
                             stage <= common_first;  
                             -- Load new instruction !
-                            -- The above statement is doubtful as there may be clashes. Needs to be discussed.
 
                         when others =>
                             -- Should not be reached
