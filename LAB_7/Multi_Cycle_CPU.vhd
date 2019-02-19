@@ -19,7 +19,7 @@ entity CPU_MULTI is
 
             -- Output Parameters
                 -- Address to be sent to instruction memory to get Instruction (PC is sent)
-            Addres_To_IM,: out integer;
+            Address_To_IM: out integer;
                 -- Address to be sent to data memory to get data, used by ldr
             Address_To_DM: out integer;
                 -- Data to be sent to data memory, used be str
@@ -27,7 +27,7 @@ entity CPU_MULTI is
                 -- Deciding for write and fetch from data memory
             Write_Enable: out std_logic;
                 -- dummy RF to be used outside
-            dummyRF: out register_file_type
+            dummyRF: out register_file_datatype
           );
 end CPU_MULTI;
 
@@ -67,7 +67,7 @@ architecture Behavioral of CPU_MULTI is
     -- Values held by RM and RN (which may be used by ALU)
     signal A, B : std_logic_vector(31 downto 0);
 
-    signal RF: register_file_type;
+    signal RF: register_file_datatype;
 
     -- Signal represting the program counter (PC)
     signal PC: integer := 0;
@@ -87,12 +87,13 @@ architecture Behavioral of CPU_MULTI is
     component ALU
         Port (
             -- Input Parameters
-            main_clock, reset: in std_logic;    -- ? Don't know if needed?
-            A, B : in std_logic_vector(31 downto 0); -- Input Values
+            work: in std_logic;    -- Logic for allowing use
+            A_ALU, B_ALU : in std_logic_vector(31 downto 0); -- Input Values
+            input_instruction : in instruction_type; -- Instruction to follow
 
             -- Output Parameters
             result : out std_logic_vector(31 downto 0); -- Result of ALU calculation
-            Z_Flag : out std_logc -- Zero flag 
+            Z_Flag : out std_logic -- Zero flag 
           );
     end component;
 
@@ -146,9 +147,9 @@ begin
                     -- Branching
                     beq when (Condition = "0000" and F_Class = "10") else
                     bne when (Condition = "0001" and F_Class = "10") else
-                    b   when (Condition = "1110" and F_Class = "10") else
+                    bal   when (Condition = "1110" and F_Class = "10") else
                     -- Error
-                    unknown when others;
+                    unknown;
     
     -- Providing the value to the last operand (Depending on the situation) --
     RM_val <= 
@@ -172,17 +173,17 @@ begin
     ALU_ref : ALU
         Port Map (
             -- Input paramters
-            work => ALU_ON;
-            A_ALU => A;
-            B_ALU => B;
-            input_instruction => current_ins;
+            work => ALU_ON,
+            A_ALU => A,
+            B_ALU => B,
+            input_instruction => current_ins,
             -- Output parameters
-            result => result_from_ALU;
+            result => result_from_ALU,
             Z_Flag => Zero_FLag
-        )
+        );
 
     -- Linking signals with OUTPUT values.
-    Addres_To_IM <= PC;
+    Address_To_IM <= PC;
     dummyRF <= RF;
     
 
@@ -215,7 +216,7 @@ begin
                 -- FOR NOW TESTING FSM IS IGNORED (THESE CAN BE ADDED EASILY LATER ON)
         process(main_clock)
         begin
-                if(reset='1')
+                if(reset='1') then
                     PC <= PC_Start;
                 
                 elsif(main_clock='1' and main_clock'event) then
@@ -263,7 +264,7 @@ begin
                             
                             -- Branch instructions
                             elsif(class = branch) then
-                                if(current_ins = b) then
+                                if(current_ins = bal) then
                                     PC <= PC + 1 + (to_integer(signed(B))/4);
                                 elsif(current_ins = beq and Zero_Flag = '1') then
                                     PC <= PC + 1 + (to_integer(signed(B))/4);
@@ -290,10 +291,10 @@ begin
                             
                             elsif(current_ins = str) then
                                 Data_To_DM <= RF(to_integer(unsigned(RD)));
-                                Address_To_DM <= result_from_ALU;
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU));
                             
                             elsif(current_ins = ldr) then
-                                Address_To_DM <= result_from_ALU;
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU));
                             end if;
                             -- Go to next stage
                             stage <= fifth_ldr;

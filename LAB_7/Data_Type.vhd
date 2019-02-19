@@ -14,7 +14,7 @@ package data_type is
 
     -- Data type for decoded instruction in ALU
     type instruction_type is
-    (add, sub, cmp, mov, ldr, str, beq, bne, b, unknown);
+    (add, sub, cmp, mov, ldr, str, beq, bne, bal, unknown);
 
 end package data_type;
 

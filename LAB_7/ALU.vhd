@@ -7,13 +7,13 @@ use work.Data_Type.all;
 entity ALU is
     Port (
             -- Input Parameters
-            work: in std_logic;    -- ? Don't know if needed?
+            work: in std_logic;   -- Logic for allowing use
             A_ALU, B_ALU : in std_logic_vector(31 downto 0); -- Input Values
-            input_instruction : instruction_type; -- Instruction to follow
+            input_instruction : in instruction_type; -- Instruction to follow
 
             -- Output Parameters
             result : out std_logic_vector(31 downto 0); -- Result of ALU calculation
-            Z_Flag : out std_logc -- Zero flag 
+            Z_Flag : out std_logic -- Zero flag 
           );
 end ALU;
 
@@ -52,6 +52,6 @@ architecture Behavioral of ALU is
                     -- Should not be reached.
                 end if;
             end if;
-        end process
+        end process;
 
-end architecture
+end Behavioral;
