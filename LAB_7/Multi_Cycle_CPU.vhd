@@ -8,13 +8,25 @@ entity CPU_MULTI is
     Port (
             -- Input Parameters
             main_clock, reset: in std_logic;
-            instruction, data_in: in std_logic_vector(31 downto 0);
+                -- Instruction from instruction memory
+            Instruction_From_IM: in std_logic_vector(31 downto 0);
+                -- Data from data memory, to be used by str
+            Data_From_DM: in std_logic_vector(31 downto 0);
+                -- Initialiser for PC for a program
             PC_Start: in integer;
+                -- Variables which handle user input for testing FSM
             step, go: in std_logic;
+
             -- Output Parameters
-            addr_prMemory, addr_data_memory: out integer;
-            data_out: out std_logic_vector(31 downto 0);
-            wr_enb: out std_logic;
+                -- Address to be sent to instruction memory to get Instruction (PC is sent)
+            Addres_To_IM,: out integer;
+                -- Address to be sent to data memory to get data, used by ldr
+            Address_To_DM: out integer;
+                -- Data to be sent to data memory, used be str
+            Data_To_DM: out std_logic_vector(31 downto 0);
+                -- Deciding for write and fetch from data memory
+            Write_Enable: out std_logic;
+                -- dummy RF to be used outside
             dummyRF: out register_file_type
           );
 end CPU_MULTI;
@@ -39,6 +51,9 @@ architecture Behavioral of CPU_MULTI is
 
     -- Signal representing the actual instruction
     signal current_ins: instruction_type := unknown;
+
+    -- Signal for multicycle handeling, to keep the original instruction (per cycle) preserved
+    signal instruction : std_logic_vector(31 downto 0);
 
     -- Signal, which is a helper for 'ldr' function
     signal call_ldr : std_logic := '0';
@@ -65,12 +80,29 @@ architecture Behavioral of CPU_MULTI is
     signal flow: flow_type := initial;
 
     -- State signal and types for CPU controller FSM (cycle stage)
-    type stage_type is (common_first, common_second, third, fourth, fifth_ldr, rest);
-    signal stage : stage_type := rest;
+    type stage_type is (common_first, common_second, third, fourth, fifth_ldr);
+    signal stage : stage_type := common_first;
+
+    -- ALU component from the ALU module
+    component ALU
+        Port (
+            -- Input Parameters
+            main_clock, reset: in std_logic;    -- ? Don't know if needed?
+            A, B : in std_logic_vector(31 downto 0); -- Input Values
+
+            -- Output Parameters
+            result : out std_logic_vector(31 downto 0); -- Result of ALU calculation
+            Z_Flag : out std_logc -- Zero flag 
+          );
+    end component;
+
+    -- Signal for handeling working and result from ALU
+    signal ALU_ON : std_logic := '0';
+    signal result_from_ALU : std_logic_vector(31 downto 0);
 
 begin
 
-    -- Concurrent assignment of the signals from positions in the instruction --
+    -- Concurrent assignment of the signals from positions in the instruction (preserved one) --
 
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);
@@ -83,6 +115,9 @@ begin
     Byte <= instruction(22);
     Write_Back <= instruction(21);
     Load_Store <= instruction(20);
+
+    -- Write enable with concurrent assignment from Load_Store
+    Write_Enable <= not Load_Store;
 
     -- RN and RD (register address)
     RN <= instruction(19 downto 16);
@@ -133,8 +168,21 @@ begin
                 -- Arithmetic shift (& multiplied by 4) | Negative Jump
                 "111111" & instruction(23 downto 0) & "00"  when (F_Class = "10" and instruction(23) = '1');
 
+    -- Mapping ALU with other signals
+    ALU_ref : ALU
+        Port Map (
+            -- Input paramters
+            work => ALU_ON;
+            A_ALU => A;
+            B_ALU => B;
+            input_instruction => current_ins;
+            -- Output parameters
+            result => result_from_ALU;
+            Z_Flag => Zero_FLag
+        )
+
     -- Linking signals with OUTPUT values.
-    addr_prMemory <= PC;
+    Addres_To_IM <= PC;
     dummyRF <= RF;
     
 
@@ -171,44 +219,94 @@ begin
                     PC <= PC_Start;
                 
                 elsif(main_clock='1' and main_clock'event) then
-                    
+                    -- Deciding the current stage
                     case stage is
 
+                        -- First stage (Common in all)
                         when common_first => 
-                            PC <= PC+1;             
-                            -- Some problem related to this. This might change instruction for further stages.
-                            -- Need to review the working of instruction memory (IM and DM are different for now).
+                            -- Increment PC
+                            PC <= PC+1;
+                            -- Store instruction
+                            instruction <= Instruction_From_IM;
+                            -- Go to next stage
                             stage <= common_second;
-                        
+
+                        -- Second stage (Common in all)
                         when common_second =>
-                            -- Putting the values from RM and RD in A and B
+                            -- Putting the values from RN in A
                             A <= RF(to_integer(unsigned(RN)));
-                            B <= RM_val; 
+                            -- Pre proccessed (general second operand) to be put in B
+                            -- Saves a lot of effort in later cases. (Different from provided ASM)
+                            B <= RM_val;
+                            -- Go to next stage
                             stage <= third;
-                        
+
+                        -- Third stage (Common in classes)
                         when third =>
+
+                            -- DP instructions
                             if(class = DP) then
-                                    -- All cases now on are blanks as need to discuss an RF module to be used in working.
-                                    -- These will be filled with that
+                                    -- Get result from ALU (in next cycle)
+                                    ALU_ON <= '1';
+                            
+                            -- DT instructions
                             elsif(class = DT) then
 
-                            elsif(class = branch) then
+                                -- str instruction
+                                if(current_ins = str) then
+                                    ALU_ON <= '1';
 
-                            else    -- Should not be reached
+                                -- ldr instruction
+                                elsif(current_ins = ldr) then
+                                    ALU_ON <= '1';
+                                end if;
+                            
+                            -- Branch instructions
+                            elsif(class = branch) then
+                                if(current_ins = b) then
+                                    PC <= PC + 1 + (to_integer(signed(B))/4);
+                                elsif(current_ins = beq and Zero_Flag = '1') then
+                                    PC <= PC + 1 + (to_integer(signed(B))/4);
+                                elsif(current_ins = bne and Zero_Flag = '0') then
+                                    PC <= PC + 1 + (to_integer(signed(B))/4);
+                                else
+                                    -- Should not be reached
+                                end if;
+                            else    
+                                -- Should not be reached
                             end if;
+                            -- Go to next stage
                             stage <= fourth;
-                        
+
+                        -- Fourth stage (specific)
                         when fourth =>
+                            
+                            -- Turn off the ALU
+                            ALU_ON <= '0';
+                            
                             if(class = DP) then
+                                -- Save the result from ALU to the desired register
+                                RF(to_integer(unsigned(RD))) <= result_from_ALU;
                             
                             elsif(current_ins = str) then
+                                Data_To_DM <= RF(to_integer(unsigned(RD)));
+                                Address_To_DM <= result_from_ALU;
                             
                             elsif(current_ins = ldr) then
-                            
-                            else
+                                Address_To_DM <= result_from_ALU;
                             end if;
-                            stage <= common_first; -- Load new instruction !
-                            -- There must be a rest state as well review
+                            -- Go to next stage
+                            stage <= fifth_ldr;
+                        
+                        -- Fifth stage (only for ldr instruction)
+                        when fifth_ldr =>
+                            -- Capturing the loaded data from DM and putting it to destination
+                            if(current_ins = ldr) then
+                                RF(to_integer(unsigned(RD))) <= Data_From_DM;
+                            end if;
+                            stage <= common_first;  -- Load new instruction !
+                            -- There must be a rest state as well (?)
+
                         when others =>
                             -- Should not be reached
                     end case;
@@ -254,18 +352,18 @@ begin
 --                     if(current_ins = ldr) then
 --                         --RF(RD) <= data_memory(RN + to_integer(signed(RM_val)));
 --                         if(call_ldr = '0') then
---                             addr_data_memory <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val));
+--                             Address_To_DM <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val));
 --                             call_ldr <= '1';
---                             wr_enb <= '0';
+--                             Write_Enable <= '0';
 --                         else
---                             RF(RD) <= data_in;
+--                             RF(RD) <= Data_From_DM;
 --                             call_ldr <= '0';
 --                             if(flow=cont or flow=done) then PC <= PC+1; end if;
 --                         end if;
 --                     elsif(current_ins = str) then
---                         wr_enb <= '1';
---                         data_out<=RF(RD);
---                         addr_data_memory <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val)) ;
+--                         Write_Enable <= '1';
+--                         Data_To_DM<=RF(RD);
+--                         Address_To_DM <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val)) ;
 --                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
 --                     else
 --                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
