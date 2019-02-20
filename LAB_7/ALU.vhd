@@ -45,7 +45,7 @@ architecture Behavioral of ALU is
                         Z_Flag <= '0';
                     end if;
                 -- DT instructions
-                elsif (input_instruction = str) then
+                elsif (input_instruction = str or input_instruction = ldr) then
                     -- Returning address value as 
                     result <= std_logic_vector(signed(A_ALU) + signed(B_ALU));
                 else
