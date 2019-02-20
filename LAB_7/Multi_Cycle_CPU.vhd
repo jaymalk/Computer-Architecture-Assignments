@@ -15,7 +15,7 @@ entity CPU_MULTI is
                 -- Initialiser for PC for a program
             PC_Start: in integer;
                 -- Variables which handle user input for testing FSM
-            step, go: in std_logic;
+            step, go, instr: in std_logic;
 
             -- Output Parameters
                 -- Address to be sent to instruction memory to get Instruction (PC is sent)
@@ -202,7 +202,7 @@ begin
                                     flow <= cont; 
                                 elsif(step = '1') then 
                                     flow <= onestep; 
-                                elsif(instr = '1')
+                                elsif(instr = '1') then
                                     flow <= oneinstr;
                                 elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then 
                                     flow <= initial;
