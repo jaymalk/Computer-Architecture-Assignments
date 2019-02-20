@@ -204,6 +204,7 @@ begin
                                     flow <= onestep; 
                                 elsif(instr = '1') then
                                     flow <= oneinstr;
+                                    red_flag <= '0';
                                 elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then 
                                     flow <= initial;
                                 end if;
@@ -220,8 +221,6 @@ begin
                 when oneinstr => if(red_flag = '1') then
                                     red_flag <= '0';
                                     flow <= done;
-                                    -- Setting the stage to common_first, as all needed stages in an instruction are done
-                                    stage <= common_first;
                                 elsif(red_flag = '0') then
                                     flow <= oneinstr;
                                 end if;
@@ -253,7 +252,7 @@ begin
 
                         -- First stage (Common in all)
                         when common_first => 
-                            if(flow = onestep or flow = oneinstr or flow = cont) then
+                            if(flow = onestep or (flow = oneinstr and red_flag = '0') or flow = cont) then
                                 -- Increment PC
                                 PC <= PC+1;
                                 -- Store instruction
@@ -279,12 +278,15 @@ begin
                             if(flow = onestep or flow = oneinstr or flow = cont) then
                                 -- DP instructions
                                 if(class = DP) then
+                                        -- DP instructions go to fourth stage
+                                        stage <= fourth;
                                         -- Get result from ALU (in next cycle)
                                         ALU_ON <= '1';
 
                                 -- DT instructions
                                 elsif(class = DT) then
-
+                                    -- DT instructions go to fourth stage
+                                    stage <= fourth;
                                     -- str instruction
                                     if(current_ins = str) then
                                         ALU_ON <= '1';
@@ -298,6 +300,8 @@ begin
                                 elsif(class = branch) then
                                     -- Set red flag for 'oneinstr'
                                     red_flag <= '1';
+                                    -- Branch instructions complete here (go to common stage)
+                                    stage <= common_first;
 
                                     if(current_ins = bal) then
                                         PC <= PC + 1 + (to_integer(signed(B))/4);
@@ -307,8 +311,7 @@ begin
                                         PC <= PC + 1 + (to_integer(signed(B))/4);
                                     end if;
                                 end if;
-                                -- Go to next stage
-                                stage <= fourth;
+                                
                             end if;
 
                         -- Fourth stage (specific)
@@ -318,20 +321,28 @@ begin
                                 ALU_ON <= '0';
 
                                 if(class = DP) then
+                                    -- DP instructions complete here
+                                    stage <= common_first;
+                                    -- Red flag set to mark completion (DP)
+                                    red_flag <= '1';
                                     -- Save the result from ALU to the desired register
                                     RF(to_integer(unsigned(RD))) <= result_from_ALU;
 
                                 elsif(current_ins = str) then
+                                    -- 'str' instruction complete here
+                                    stage <= common_first;
+                                    -- Red flag set to mark completion (str)
+                                    red_flag <= '1';
+                                    -- 'str' related operations
                                     Data_To_DM <= RF(to_integer(unsigned(RD)));
                                     Address_To_DM <= to_integer(unsigned(result_from_ALU));
 
                                 elsif(current_ins = ldr) then
+                                    -- 'ldr' instruction goes to stage five
+                                    stage <= fifth_ldr;
                                     Address_To_DM <= to_integer(unsigned(result_from_ALU));
                                 end if;
-                                -- Go to next stage
-                                stage <= fifth_ldr;
-                                -- Since red flag is one cycle late
-                                red_flag <= '1';
+
                             end if;
 
                         -- Fifth stage (only for ldr instruction)
@@ -340,86 +351,14 @@ begin
                             if(current_ins = ldr) then
                                 RF(to_integer(unsigned(RD))) <= Data_From_DM;
                             end if;
+                            -- Red flag set for completion of instruction
+                            red_flag <= '1';
+                            -- 'ldr' instruction complete here
                             stage <= common_first;  
-                            -- Load new instruction !
 
                         when others =>
                             -- Should not be reached
                     end case;
                 end if;
         end process;
-
-                -- OLD SINGLE CYCLE CODE
---     process(main_clock)
---     begin
---             if (reset='1') then
---                 PC <= PC_Start;
-                
---             elsif(main_clock='1' and main_clock'event) then
-                
---                 if(class = DP) then
-    
---                     if(current_ins = add) then
---                         RF(RD) <= std_logic_vector(unsigned(RF(RN)) + unsigned(RM_val));
---                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
-                   
---                     elsif(current_ins = sub) then
---                         RF(RD) <= std_logic_vector(unsigned(RF(RN)) - unsigned(RM_val));
---                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
-    
---                     elsif(current_ins = mov) then
---                         RF(RD) <= RM_val;
---                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
-    
---                     elsif(current_ins = cmp) then
--- --                        RF(RD) <= std_logic_vector(unsigned(RF(RN)) - unsigned(RM_val));
-                        
---                         if(RF(RN) = RM_val) then
---                             Zero_Flag <= '1';
---                         else
---                             Zero_Flag <= '0';
---                         end if;
-    
---                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
---                     else
---                     end if;
-    
---                 elsif(class = DT) then
---                     if(current_ins = ldr) then
---                         --RF(RD) <= data_memory(RN + to_integer(signed(RM_val)));
---                         if(call_ldr = '0') then
---                             Address_To_DM <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val));
---                             call_ldr <= '1';
---                             Write_Enable <= '0';
---                         else
---                             RF(RD) <= Data_From_DM;
---                             call_ldr <= '0';
---                             if(flow=cont or flow=done) then PC <= PC+1; end if;
---                         end if;
---                     elsif(current_ins = str) then
---                         Write_Enable <= '1';
---                         Data_To_DM<=RF(RD);
---                         Address_To_DM <= to_integer(signed(RF(RN))) + to_integer(signed(RM_val)) ;
---                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
---                     else
---                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
---                     end if;
-    
-                    
---                 elsif(class = branch) then
-                                    
---                     if(current_ins = b) then
---                        if(flow=cont or flow=onestep) then PC <= PC + 2 + (to_integer(signed(RM_val))/4); end if;
---                     elsif((current_ins = beq) and (Zero_Flag = '1') ) then
---                        if(flow=cont or flow=onestep) then PC <= PC + 2 + (to_integer(signed(RM_val))/4); end if;
---                     elsif((current_ins = bne) and (Zero_Flag = '0') ) then
---                        if(flow=cont or flow=onestep) then  PC <= PC + 2 + (to_integer(signed(RM_val))/4); end if;
---                     else
---                         if(flow=cont or flow=onestep) then PC <= PC+1; end if;
---                     end if;
---                 else
---                 end if;
---             end if;
---     end process;
-
 end Behavioral;
