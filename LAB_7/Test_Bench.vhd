@@ -83,7 +83,7 @@ architecture Behavioral of TestBench is
                     -- Initialiser for PC for a program
                 PC_Start: in integer;
                     -- Variables which handle user input for testing FSM
-                step, go: in std_logic;
+                step, go, instr: in std_logic;
     
                 -- Output Parameters
                     -- Address to be sent to instruction memory to get Instruction (PC is sent)
@@ -113,7 +113,7 @@ begin
       
 ------------------------------------------------------------
     -- Mapping the parameters of Clock divider
-    SLOW: clockDivider
+    SLOW: clock_divider
        port map
         (
         -- Input parameters
@@ -126,13 +126,13 @@ begin
 ------------------------------------------------------------
     -- Assigning the buttons their respective positions
         -- Reset Button
-        Reset_Component: entity  work.debouncer(arch_debouncer) port map(Reset_Button, slow_clock, reset);
+        Reset_Component: entity  work.debouncer(architecture_debouncer) port map(Reset_Button, slow_clock, reset);
         -- Step button
-        Step_Component: entity  work.debouncer(arch_debouncer) port map(Step_Button, slow_clock, step);
+        Step_Component: entity  work.debouncer(architecture_debouncer) port map(Step_Button, slow_clock, step);
         -- Go button
-        Go_Component: entity  work.debouncer(arch_debouncer) port map(Go_Button, slow_clock, go);
+        Go_Component: entity  work.debouncer(architecture_debouncer) port map(Go_Button, slow_clock, go);
         -- Instr button
-        Instr_Component: entity  work.debouncer(arch_debouncer) port map(Instr_Button, slow_clock, instr);
+        Instr_Component: entity  work.debouncer(architecture_debouncer) port map(Instr_Button, slow_clock, instr);
     
 ------------------------------------------------------------
     -- Concurrent assignement of IM_Address(8 bit vector), from Address_To_IM (integer)
@@ -150,7 +150,7 @@ begin
     PC_Start <= ((32) * to_integer(unsigned(Program_Select)));
 
     -- Mapping the parameters of CPU
-    TheCPU: cpu
+    TheCPU: CPU_MULTI
         port map
         (
         -- Input Parameters
@@ -175,7 +175,7 @@ begin
             -- Data to DM
             Data_To_DM => Data_To_DM,
             -- Write enable for DM
-            Write_Enable => we,
+            Write_Enable => Write_Enable,
             -- Dummy RF for display
             RF_For_Display => RF_For_Display
         );

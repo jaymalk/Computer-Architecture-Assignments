@@ -27,9 +27,9 @@ entity CPU_MULTI is
                 -- Deciding for write and fetch from data memory
             Write_Enable: out std_logic;
                 -- dummy RF to be used outside
-            dummyRF: out register_file_datatype
+            RF_For_Display: out register_file_datatype
           );
-end CPU_MULTI;
+end CPU_Multi;
 
 
 architecture Behavioral of CPU_MULTI is
@@ -85,7 +85,7 @@ architecture Behavioral of CPU_MULTI is
 
     -- State signal and types for CPU controller FSM (cycle stage)
     type stage_type is (common_first, common_second, third, fourth, fifth_ldr);
-    signal stage : stage_type := common_first;
+    signal stage : stage_type := common_first ;
 
     -- ALU component from the ALU module
     component ALU
@@ -188,7 +188,7 @@ begin
 
     -- Linking signals with OUTPUT values.
     Address_To_IM <= PC;
-    dummyRF <= RF;
+    RF_For_Display <= RF;
     
 
     -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
@@ -246,7 +246,7 @@ begin
         begin
                 if(reset='1') then
                     PC <= PC_Start;
-                
+                    
                 elsif(main_clock='1' and main_clock'event) then
                     -- Deciding the current stage
                     case stage is
