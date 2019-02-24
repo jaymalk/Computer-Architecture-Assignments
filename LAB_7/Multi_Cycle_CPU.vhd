@@ -42,7 +42,7 @@ architecture Behavioral of CPU_MULTI is
 
     -- Signal for capturing IPUBWL (6 bit offset) in DT instructions
     signal Immediate, Load_Store, Pre_Post, Up_Down, Byte, Write_Back: std_logic;
-    
+
     -- Signal for capturing shift specification
     signal Shift: std_logic_vector(7 downto 0);
 
@@ -60,7 +60,7 @@ architecture Behavioral of CPU_MULTI is
 
     -- Signal for current and destination registers
     signal RD, RN: std_logic_vector(3 downto 0);
-    
+
     -- Value associated with the third operand (RM or llM)
     signal RM_val: std_logic_vector(31 downto 0);
 
@@ -74,7 +74,7 @@ architecture Behavioral of CPU_MULTI is
 
     -- Signal for keeping in check the Z Flag
     signal Zero_Flag: std_logic;
-    
+
     -- State signal and types for the CPU tester FSM
     type flow_type is (initial, cont, onestep, oneinstr, done);
     signal flow: flow_type := initial;
@@ -87,6 +87,18 @@ architecture Behavioral of CPU_MULTI is
     type stage_type is (common_first, common_second, third, fourth, fifth_ldr);
     signal stage : stage_type := common_first ;
 
+    component decoder
+      Port (
+            -- Input parameters
+            opcode : in std_logic_vector(3 downto 0); -- Opcode
+            ls : in std_logic; -- Load_Store bit
+            cond : in std_logic_vector(3 downto 0); -- Condition
+            class : in std_logic_vector(1 downto 0); -- (F) class
+            -- Output parameter
+            instruction : out instruction_type -- The output instruction
+           );
+    end component;
+
     -- ALU component from the ALU module
     component ALU
         Port (
@@ -97,7 +109,7 @@ architecture Behavioral of CPU_MULTI is
 
             -- Output Parameters
             result : out std_logic_vector(31 downto 0); -- Result of ALU calculation
-            Z_Flag : out std_logic -- Zero flag 
+            Z_Flag : out std_logic -- Zero flag
           );
     end component;
 
@@ -126,7 +138,7 @@ begin
 
     -- RN and RD (register address)
     RN <= instruction(19 downto 16);
-    RD <= instruction(15 downto 12); 
+    RD <= instruction(15 downto 12);
 
     -- Shift specification and opcodes
     Shift <= instruction(11 downto 4);
@@ -139,24 +151,20 @@ begin
             branch when "10",
             unknown when others;
 
-    -- Deciding the current instruction from the opcode and F_Class --
-    current_ins <=  -- DP
-                    add when (Opcode = "0100" and F_Class = "00") else
-                    sub when (Opcode = "0010" and F_Class = "00") else
-                    mov when (Opcode = "1101" and F_Class = "00") else
-                    cmp when (Opcode = "1010" and F_Class = "00") else
-                    -- DT
-                    ldr when (Load_Store = '1' and F_Class = "01") else
-                    str when (Load_Store = '0' and F_Class = "01") else
-                    -- Branching
-                    beq when (Condition = "0000" and F_Class = "10") else
-                    bne when (Condition = "0001" and F_Class = "10") else
-                    bal   when (Condition = "1110" and F_Class = "10") else
-                    -- Error
-                    unknown;
-    
+
+    Instruction_Decoder : Decoder
+        Port Map (
+            -- Input Parameters
+            opcode => Opcode,
+            class => F_Class,
+            ls => Load_Store,
+            cond => Condition,
+            -- Output Paramter
+            instruction => current_ins -- Assigning the current instruction
+        )
+
     -- Providing the value to the last operand (Depending on the situation) --
-    RM_val <= 
+    RM_val <=
             -- DP instruction
                 -- Third operand is Register
                 RF(to_integer(unsigned(instruction(3 downto 0))))   when (F_Class = "00" and Immediate='0') else
@@ -189,32 +197,32 @@ begin
     -- Linking signals with OUTPUT values.
     Address_To_IM <= PC;
     RF_For_Display <= RF;
-    
+
 
     -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
         -- Modified for oneinstr. Most instructions same, little modification in initial.
      process(main_clock)
-     begin                
+     begin
         if(main_clock'Event and main_clock = '1') then
             case flow is
 
-                when initial => if(go = '1') then 
-                                    flow <= cont; 
-                                elsif(step = '1') then 
-                                    flow <= onestep; 
+                when initial => if(go = '1') then
+                                    flow <= cont;
+                                elsif(step = '1') then
+                                    flow <= onestep;
                                 elsif(instr = '1') then
                                     flow <= oneinstr;
                                     red_flag <= '0';
-                                elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then 
+                                elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then
                                     flow <= initial;
                                 end if;
 
-                when cont =>    if(instruction = "00000000000000000000000000000000") then 
+                when cont =>    if(instruction = "00000000000000000000000000000000") then
                                     flow <= done;
                                 -- The above instruction is always check before the third stage is executed, thus complying with ASM
-                                elsif(reset = '1') then 
-                                    flow <= initial; 
-                                else 
+                                elsif(reset = '1') then
+                                    flow <= initial;
+                                else
                                     flow <= cont;
                                 end if;
 
@@ -227,17 +235,17 @@ begin
 
                 when onestep => flow<=done;
 
-                when done =>    if(step = '0' and go = '0') then 
-                                    flow <= initial; 
-                                elsif(step = '1' or go = '1' or instr = '1') then 
+                when done =>    if(step = '0' and go = '0') then
+                                    flow <= initial;
+                                elsif(step = '1' or go = '1' or instr = '1') then
                                     flow <= done;
-                                elsif(reset = '1') then 
+                                elsif(reset = '1') then
                                     flow <= initial;
                                 end if;
             end case;
         end if;
      end process;
-    
+
     -- MAIN WORKING FOR THE CPU (ALU)
                 -- NEW MULTI CYCLE CODE
                 -- FOR NOW TESTING FSM IS IGNORED (THESE CAN BE ADDED EASILY LATER ON)
@@ -245,13 +253,13 @@ begin
         begin
                 if(reset='1') then
                     PC <= PC_Start;
-                    
+
                 elsif(main_clock='1' and main_clock'event) then
                     -- Deciding the current stage
                     case stage is
 
                         -- First stage (Common in all)
-                        when common_first => 
+                        when common_first =>
                             if(flow = onestep or (flow = oneinstr and red_flag = '0') or flow = cont) then
                                 -- Increment PC
                                 PC <= PC+1;
@@ -311,7 +319,7 @@ begin
                                         PC <= PC + 1 + (to_integer(signed(B))/4);
                                     end if;
                                 end if;
-                                
+
                             end if;
 
                         -- Fourth stage (specific)
@@ -354,7 +362,7 @@ begin
                             -- Red flag set for completion of instruction
                             red_flag <= '1';
                             -- 'ldr' instruction complete here
-                            stage <= common_first;  
+                            stage <= common_first;
 
                         when others =>
                             -- Should not be reached
