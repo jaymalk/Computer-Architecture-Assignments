@@ -235,7 +235,7 @@ begin
 
                 when onestep => flow<=done;
 
-                when done =>    if(step = '0' and go = '0') then
+                when done =>    if(step = '0' and go = '0' and instr='0') then
                                     flow <= initial;
                                 elsif(step = '1' or go = '1' or instr = '1') then
                                     flow <= done;
