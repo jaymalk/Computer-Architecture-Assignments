@@ -79,10 +79,6 @@ architecture Behavioral of CPU_MULTI is
     type flow_type is (initial, cont, onestep, oneinstr, done);
     signal flow: flow_type := initial;
 
-    -- Red flag signal to decide the current position in an instruction
-    -- Helper for 'oneinstr' flow type.
-    signal red_flag : std_logic := '0';
-
     -- State signal and types for CPU controller FSM (cycle stage)
     type stage_type is (common_first, common_second, third, fourth, fifth_ldr);
     signal stage : stage_type := common_first ;
@@ -226,11 +222,8 @@ begin
                                     flow <= cont;
                                 end if;
 
-                when oneinstr => if(red_flag = '1') then
-                                    red_flag <= '0';
-                                    flow <= done;
-                                elsif(red_flag = '0') then
-                                    flow <= oneinstr;
+                when oneinstr => if(reset = '1') then
+                                    flow <= initial;
                                 end if;
 
                 when onestep => flow<=done;
@@ -260,7 +253,7 @@ begin
 
                         -- First stage (Common in all)
                         when common_first =>
-                            if(flow = onestep or (flow = oneinstr and red_flag = '0') or flow = cont) then
+                            if(flow = onestep or flow = oneinstr or flow = cont) then
                                 -- Increment PC
                                 PC <= PC+1;
                                 -- Store instruction
@@ -306,8 +299,10 @@ begin
 
                                 -- Branch instructions
                                 elsif(class = branch) then
-                                    -- Set red flag for 'oneinstr'
-                                    red_flag <= '1';
+                                    -- Set 'done' if 'oneinstr'
+                                    if(flow = oneinstr) then
+                                        flow <= done;
+                                    end if;
                                     -- Branch instructions complete here (go to common stage)
                                     stage <= common_first;
 
@@ -331,16 +326,20 @@ begin
                                 if(class = DP) then
                                     -- DP instructions complete here
                                     stage <= common_first;
-                                    -- Red flag set to mark completion (DP)
-                                    red_flag <= '1';
+                                    -- Set 'done' if 'oneinstr'
+                                    if(flow = oneinstr) then
+                                        flow <= done;
+                                    end if;
                                     -- Save the result from ALU to the desired register
                                     RF(to_integer(unsigned(RD))) <= result_from_ALU;
 
                                 elsif(current_ins = str) then
                                     -- 'str' instruction complete here
                                     stage <= common_first;
-                                    -- Red flag set to mark completion (str)
-                                    red_flag <= '1';
+                                    -- Set 'done' if 'oneinstr'
+                                    if(flow = oneinstr) then
+                                        flow <= done;
+                                    end if;
                                     -- 'str' related operations
                                     Data_To_DM <= RF(to_integer(unsigned(RD)));
                                     Address_To_DM <= to_integer(unsigned(result_from_ALU));
@@ -355,15 +354,18 @@ begin
 
                         -- Fifth stage (only for ldr instruction)
                         when fifth_ldr =>
-                            -- Capturing the loaded data from DM and putting it to destination
-                            if(current_ins = ldr) then
-                                RF(to_integer(unsigned(RD))) <= Data_From_DM;
+                            if(flow = onestep or flow = oneinstr or flow = cont) then
+                                -- Capturing the loaded data from DM and putting it to destination
+                                if(current_ins = ldr) then
+                                    RF(to_integer(unsigned(RD))) <= Data_From_DM;
+                                end if;
+                                -- Set 'done' if 'oneinstr'
+                                if(flow = oneinstr) then
+                                    flow <= done;
+                                end if;
+                                -- 'ldr' instruction complete here
+                                stage <= common_first;
                             end if;
-                            -- Red flag set for completion of instruction
-                            red_flag <= '1';
-                            -- 'ldr' instruction complete here
-                            stage <= common_first;
-
                         when others =>
                             -- Should not be reached
                     end case;
