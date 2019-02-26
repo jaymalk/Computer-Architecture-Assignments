@@ -162,7 +162,7 @@ begin
             cond => Condition,
             -- Output Paramter
             instruction => current_ins -- Assigning the current instruction
-        )
+        );
 
     -- Providing the value to the last operand (Depending on the situation) --
     RM_val <=
