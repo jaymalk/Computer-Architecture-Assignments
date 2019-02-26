@@ -203,7 +203,7 @@ begin
         -- Modified for oneinstr. Most instructions same, little modification in initial.
      process(main_clock)
      begin
-        if(main_clock'Event and main_clock = '1') then
+--        if(main_clock'Event and main_clock = '1') then
             case flow is
 
                 when initial => if(go = '1') then
@@ -212,7 +212,6 @@ begin
                                     flow <= onestep;
                                 elsif(instr = '1') then
                                     flow <= oneinstr;
-                                    red_flag <= '0';
                                 elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then
                                     flow <= initial;
                                 end if;
@@ -227,10 +226,9 @@ begin
                                 end if;
 
                 when oneinstr => if(red_flag = '1') then
-                                    red_flag <= '0';
                                     flow <= done;
-                                elsif(red_flag = '0') then
-                                    flow <= oneinstr;
+                                elsif(reset = '1') then
+                                    flow <= initial;
                                 end if;
 
                 when onestep => flow<=done;
@@ -243,7 +241,7 @@ begin
                                     flow <= initial;
                                 end if;
             end case;
-        end if;
+--        end if;
      end process;
 
     -- MAIN WORKING FOR THE CPU (ALU)
@@ -251,8 +249,10 @@ begin
                 -- FOR NOW TESTING FSM IS IGNORED (THESE CAN BE ADDED EASILY LATER ON)
         process(main_clock)
         begin
+
                 if(reset='1') then
                     PC <= PC_Start;
+                    stage <= common_first;
 
                 elsif(main_clock='1' and main_clock'event) then
                     -- Deciding the current stage
@@ -367,6 +367,10 @@ begin
                         when others =>
                             -- Should not be reached
                     end case;
+                end if;
+                -- Ressetting the red flag
+                if(red_flag = '1') then
+                    red_flag <= '0';
                 end if;
         end process;
 end Behavioral;
