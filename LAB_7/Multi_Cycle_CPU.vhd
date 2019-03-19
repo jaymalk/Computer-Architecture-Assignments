@@ -203,7 +203,7 @@ begin
         -- Modified for oneinstr. Most instructions same, little modification in initial.
      process(main_clock)
      begin
---        if(main_clock'Event and main_clock = '1') then
+        if(main_clock'Event and main_clock='0') then
             case flow is
 
                 when initial => if(go = '1') then
@@ -241,7 +241,7 @@ begin
                                     flow <= initial;
                                 end if;
             end case;
---        end if;
+        end if;
      end process;
 
     -- MAIN WORKING FOR THE CPU (ALU)
@@ -318,6 +318,10 @@ begin
                                     elsif(current_ins = bne and Zero_Flag = '0') then
                                         PC <= PC + 1 + (to_integer(signed(B))/4);
                                     end if;
+                                
+                                -- Class is Unknown, return to Common_first
+                                else 
+                                    stage <= common_first;
                                 end if;
 
                             end if;
