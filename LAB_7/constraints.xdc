@@ -93,5 +93,5 @@
 	 set_property IOSTANDARD LVCMOS33 [get_ports Step_Button]
  set_property PACKAGE_PIN T17 [get_ports Go_Button]						
 	 set_property IOSTANDARD LVCMOS33 [get_ports Go_Button]
- set_property PACKAGE_PIN T18 [get_ports Instr_Button]						
+ set_property PACKAGE_PIN U17 [get_ports Instr_Button]						
           set_property IOSTANDARD LVCMOS33 [get_ports Instr_Button]
