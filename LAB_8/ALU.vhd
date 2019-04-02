@@ -31,47 +31,47 @@ architecture Behavioral of ALU is
                 -- DP instructions
 
                 if (input_instruction = not_nand) then
-                    -- Taking AND of the values and putting in result.
-                    result <= A_ALU AND B_ALU;
+                    -- Taking AND of the values and putting in temp_result.
+                    temp_result <= A_ALU AND B_ALU;
                 elsif (input_instruction = eor) then
-                    -- Taking XOR of the values and putting in result.
-                    result <= A_ALU XOR B_ALU;
+                    -- Taking XOR of the values and putting in temp_result.
+                    temp_result <= A_ALU XOR B_ALU;
                 elsif (input_instruction = orr) then
-                    -- Taking OR of the values and putting in result.
-                    result <= A_ALU OR B_ALU;
+                    -- Taking OR of the values and putting in temp_result.
+                    temp_result <= A_ALU OR B_ALU;
                 elsif (input_instruction = bic) then
-                    -- Taking BIC of the values and putting in result.
-                    result <= A_ALU AND NOT B_ALU;
+                    -- Taking BIC of the values and putting in temp_result.
+                    temp_result <= A_ALU AND NOT B_ALU;
 
                 elsif (input_instruction = sub) then
-                    -- Subtracting the values and putting in result.
-                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(NOT B_ALU) + unsigned("00000000000000000000000000000001"));
+                    -- Subtracting the values and putting in temp_result.
+                    temp_result <= std_logic_vector(unsigned(A_ALU) + unsigned(NOT B_ALU) + unsigned("00000000000000000000000000000001"));
                 elsif (input_instruction = rsb) then
-                    -- Reverse subtracting the values and putting in result.
-                    result <= std_logic_vector(unsigned(B_ALU) + unsigned(NOT A_ALU) + unsigned("00000000000000000000000000000001"));
+                    -- Reverse subtracting the values and putting in temp_result.
+                    temp_result <= std_logic_vector(unsigned(B_ALU) + unsigned(NOT A_ALU) + unsigned("00000000000000000000000000000001"));
                 elsif(input_instruction = add) then
-                    -- Adding the values and putting in result.
-                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(B_ALU));
+                    -- Adding the values and putting in temp_result.
+                    temp_result <= std_logic_vector(unsigned(A_ALU) + unsigned(B_ALU));
                 elsif (input_instruction = adc) then
-                    -- Adding with carry the values and putting in result.
-                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(B_ALU) + C);
+                    -- Adding with carry the values and putting in temp_result.
+                    temp_result <= std_logic_vector(unsigned(A_ALU) + unsigned(B_ALU) + C);
                 elsif (input_instruction = sbc) then
-                    -- Subtracting with carry the values and putting in result.
-                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(NOT B_ALU) + C);
+                    -- Subtracting with carry the values and putting in temp_result.
+                    temp_result <= std_logic_vector(unsigned(A_ALU) + unsigned(NOT B_ALU) + C);
                 elsif (input_instruction = rsc) then
-                    -- Reverse subtracting with carry the values and putting in result.
-                    result <= std_logic_vector(unsigned(B_ALU) + unsigned(NOT A_ALU) + C);
+                    -- Reverse subtracting with carry the values and putting in temp_result.
+                    temp_result <= std_logic_vector(unsigned(B_ALU) + unsigned(NOT A_ALU) + C);
 
                 elsif (input_instruction = mov) then
                     -- Simple mov operation, value in B_ALU is the moved value.
-                    result <= B_ALU;
+                    temp_result <= B_ALU;
                 elsif (input_instruction = mvn) then
                     -- Simple mvn operation, value in B_ALU with negation is the moved value.
-                    result <= NOT B_ALU;
+                    temp_result <= NOT B_ALU;
 
                 elsif (input_instruction = cmp) then
                     -- Compare operation, Z flag changed here.
-                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(NOT B_ALU) + unsigned("00000000000000000000000000000001"));
+                    temp_result <= std_logic_vector(unsigned(A_ALU) + unsigned(NOT B_ALU) + unsigned("00000000000000000000000000000001"));
                     -- Setting the Zero Flag
                     if(A_ALU = B_ALU) then
                         Z_Flag <= '1';
@@ -80,7 +80,7 @@ architecture Behavioral of ALU is
                     end if;
                 elsif (input_instruction = cmn) then
                     -- Compare negative operation, Z flag changed here.
-                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(B_ALU));
+                    temp_result <= std_logic_vector(unsigned(A_ALU) + unsigned(B_ALU));
                     -- Setting the Zero Flag
                     if(A_ALU = NOT B_ALU) then
                         Z_Flag <= '1';
@@ -89,7 +89,7 @@ architecture Behavioral of ALU is
                     end if;
                 elsif (input_instruction = tst) then
                     -- Testing operation, Z flag changed here.
-                    result <= A_ALU AND B_ALU;
+                    temp_result <= A_ALU AND B_ALU;
                     -- Setting the Zero Flag
                     if(A_ALU = B_ALU) then
                         Z_Flag <= '1';
@@ -98,7 +98,7 @@ architecture Behavioral of ALU is
                     end if;
                 elsif (input_instruction = teq) then
                     -- Compare operation, Z flag changed here.
-                    result <= A_ALU XOR B_ALU;
+                    temp_result <= A_ALU XOR B_ALU;
                     -- Setting the Zero Flag
                     if(A_ALU = B_ALU) then
                         Z_Flag <= '1';
@@ -108,11 +108,23 @@ architecture Behavioral of ALU is
                 -- DT instructions
                 elsif (input_instruction = str or input_instruction = ldr) then
                     -- Returning address value as
-                    result <= std_logic_vector(signed(A_ALU) + signed(B_ALU));
+                    temp_result <= std_logic_vector(signed(A_ALU) + signed(B_ALU));
                 else
                     -- Should not be reached.
                 end if;
             end if;
         end process;
 
+        result <= temp_result;
+
+        N_Flag <= temp_result(31);
+
+        Z_Flag <= '1' when (temp_result = "00000000000000000000000000000000") else
+                 '0';
+        
+        c32 <= (A_ALU(31) AND B_ALU(31)) OR (B_ALU(31) AND temp_result(31)) OR (A_ALU(31) AND temp_result(31));
+        c31 <= (A_ALU(31) XOR B_ALU(31) XOR temp_result(31));
+
+        V_Flag <= c31 XOR c32;
+        C_Flag <= c32;
 end Behavioral;
