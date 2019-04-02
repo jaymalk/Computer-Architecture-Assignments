@@ -72,16 +72,12 @@ architecture Behavioral of CPU_MULTI is
     -- Signal represting the program counter (PC)
     signal PC: integer := 0;
 
-    -- Signal for keeping in check the Z Flag
+    -- Signal for keeping in check the flags
     signal Zero_Flag, Carry_Flag, Neg_Flag, Over_Flag: std_logic;
 
     -- State signal and types for the CPU tester FSM
     type flow_type is (initial, cont, onestep, oneinstr, done);
     signal flow: flow_type := initial;
-
-    -- Red flag signal to decide the current position in an instruction
-    -- Helper for 'oneinstr' flow type.
-    signal red_flag : std_logic := '0';
 
     -- State signal and types for CPU controller FSM (cycle stage)
     type stage_type is (common_first, common_second, third, fourth, fifth_ldr);
@@ -111,6 +107,8 @@ architecture Behavioral of CPU_MULTI is
             result : out std_logic_vector(31 downto 0); -- Result of ALU calculation
             Z_Flag : out std_logic -- Zero flag
             C_Flag : out std_logic -- Carry flag
+            V_Flag : out std_logic -- Overflow flag
+            N_Flag : out std_logic -- Negative flag
           );
     end component;
 
@@ -193,7 +191,9 @@ begin
             -- Output parameters
             result => result_from_ALU,
             Z_Flag => Zero_FLag,
-            C_Flag => Carry_Flag
+            C_Flag => Carry_Flag,
+            V_Flag => Over_Flag,
+            N_Flag => Neg_Flag
         );
 
     -- Linking signals with OUTPUT values.
@@ -201,174 +201,172 @@ begin
     RF_For_Display <= RF;
 
 
-    -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
-        -- Modified for oneinstr. Most instructions same, little modification in initial.
-     process(main_clock)
-     begin
-        if(main_clock'Event and main_clock = '1') then
-            case flow is
-
-                when initial => if(go = '1') then
-                                    flow <= cont;
-                                elsif(step = '1') then
-                                    flow <= onestep;
-                                elsif(instr = '1') then
-                                    flow <= oneinstr;
-                                    red_flag <= '0';
-                                elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then
-                                    flow <= initial;
-                                end if;
-
-                when cont =>    if(instruction = "00000000000000000000000000000000") then
-                                    flow <= done;
-                                -- The above instruction is always check before the third stage is executed, thus complying with ASM
-                                elsif(reset = '1') then
-                                    flow <= initial;
-                                else
-                                    flow <= cont;
-                                end if;
-
-                when oneinstr => if(red_flag = '1') then
-                                    red_flag <= '0';
-                                    flow <= done;
-                                elsif(red_flag = '0') then
-                                    flow <= oneinstr;
-                                end if;
-
-                when onestep => flow<=done;
-
-                when done =>    if(step = '0' and go = '0') then
-                                    flow <= initial;
-                                elsif(step = '1' or go = '1' or instr = '1') then
-                                    flow <= done;
-                                elsif(reset = '1') then
-                                    flow <= initial;
-                                end if;
-            end case;
-        end if;
-     end process;
-
-    -- MAIN WORKING FOR THE CPU (ALU)
-                -- NEW MULTI CYCLE CODE
-                -- FOR NOW TESTING FSM IS IGNORED (THESE CAN BE ADDED EASILY LATER ON)
-        process(main_clock)
-        begin
-                if(reset='1') then
-                    PC <= PC_Start;
-
-                elsif(main_clock='1' and main_clock'event) then
-                    -- Deciding the current stage
-                    case stage is
-
-                        -- First stage (Common in all)
-                        when common_first =>
-                            if(flow = onestep or (flow = oneinstr and red_flag = '0') or flow = cont) then
-                                -- Increment PC
-                                PC <= PC+1;
-                                -- Store instruction
-                                instruction <= Instruction_From_IM;
-                                -- Go to next stage
-                                stage <= common_second;
-                            end if;
-
-                        -- Second stage (Common in all)
-                        when common_second =>
-                            if(flow = onestep or flow = oneinstr or flow = cont) then
-                                -- Putting the values from RN in A
-                                A <= RF(to_integer(unsigned(RN)));
-                                -- Pre proccessed (general second operand) to be put in B
-                                -- Saves a lot of effort in later cases. (Different from provided ASM)
-                                B <= RM_val;
-                                -- Go to next stage
-                                stage <= third;
-                            end if;
-
-                        -- Third stage (Common in classes)
-                        when third =>
-                            if(flow = onestep or flow = oneinstr or flow = cont) then
-                                -- DP instructions
-                                if(class = DP) then
-                                        -- DP instructions go to fourth stage
-                                        stage <= fourth;
-                                        -- Get result from ALU (in next cycle)
-                                        ALU_ON <= '1';
-
-                                -- DT instructions
-                                elsif(class = DT) then
-                                    -- DT instructions go to fourth stage
+    -- BOTH FMS'S FOR STAGE && FLOW_COMMAND
+        -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
+            -- Modified for oneinstr. Most instructions same, little modification in initial.
+        -- MAIN WORKING FOR THE CPU (ALU)
+            -- NEW MULTI CYCLE CODE
+            -- FOR NOW TESTING FSM IS IGNORED (THESE CAN BE ADDED EASILY LATER ON)
+    process(main_clock)
+    begin
+        ------------------------------------------
+        -- CPU FSM
+            if(reset='1') then
+                PC <= PC_Start;
+                stage <= common_first;
+    
+            elsif(main_clock='1' and main_clock'event) then
+                -- Deciding the current stage
+                case stage is
+    
+                    -- First stage (Common in all)
+                    when common_first =>
+                        if(flow = onestep or flow = oneinstr or flow = cont) then
+                            -- Increment PC
+                            PC <= PC+1;
+                            -- Store instruction
+                            instruction <= Instruction_From_IM;
+                            -- Go to next stage
+                            stage <= common_second;
+                        end if;
+    
+                    -- Second stage (Common in all)
+                    when common_second =>
+                        if(flow = onestep or flow = oneinstr or flow = cont) then
+                            -- Putting the values from RN in A
+                            A <= RF(to_integer(unsigned(RN)));
+                            -- Pre proccessed (general second operand) to be put in B
+                            -- Saves a lot of effort in later cases. (Different from provided ASM)
+                            B <= RM_val;
+                            -- Go to next stage
+                            stage <= third;
+                        end if;
+    
+                    -- Third stage (Common in classes)
+                    when third =>
+                        if(flow = onestep or flow = oneinstr or flow = cont) then
+                            -- DP instructions
+                            if(class = DP) then
+                                    -- DP instructions go to fourth stage
                                     stage <= fourth;
-                                    -- str instruction
-                                    if(current_ins = str) then
-                                        ALU_ON <= '1';
-
-                                    -- ldr instruction
-                                    elsif(current_ins = ldr) then
-                                        ALU_ON <= '1';
-                                    end if;
-
-                                -- Branch instructions
-                                elsif(class = branch) then
-                                    -- Set red flag for 'oneinstr'
-                                    red_flag <= '1';
-                                    -- Branch instructions complete here (go to common stage)
-                                    stage <= common_first;
-
-                                    if(current_ins = bal) then
-                                        PC <= PC + 1 + (to_integer(signed(B))/4);
-                                    elsif(current_ins = beq and Zero_Flag = '1') then
-                                        PC <= PC + 1 + (to_integer(signed(B))/4);
-                                    elsif(current_ins = bne and Zero_Flag = '0') then
-                                        PC <= PC + 1 + (to_integer(signed(B))/4);
-                                    end if;
-                                end if;
-
-                            end if;
-
-                        -- Fourth stage (specific)
-                        when fourth =>
-                            if(flow = onestep or flow = oneinstr or flow = cont) then
-                                -- Turn off the ALU
-                                ALU_ON <= '0';
-
-                                if(class = DP) then
-                                    -- DP instructions complete here
-                                    stage <= common_first;
-                                    -- Red flag set to mark completion (DP)
-                                    red_flag <= '1';
-                                    -- Save the result from ALU to the desired register
-                                    RF(to_integer(unsigned(RD))) <= result_from_ALU;
-
-                                elsif(current_ins = str) then
-                                    -- 'str' instruction complete here
-                                    stage <= common_first;
-                                    -- Red flag set to mark completion (str)
-                                    red_flag <= '1';
-                                    -- 'str' related operations
-                                    Data_To_DM <= RF(to_integer(unsigned(RD)));
-                                    Address_To_DM <= to_integer(unsigned(result_from_ALU));
-
+                                    -- Get result from ALU (in next cycle)
+                                    ALU_ON <= '1';
+    
+                            -- DT instructions
+                            elsif(class = DT) then
+                                -- DT instructions go to fourth stage
+                                stage <= fourth;
+                                -- str instruction
+                                if(current_ins = str) then
+                                    ALU_ON <= '1';
+    
+                                -- ldr instruction
                                 elsif(current_ins = ldr) then
-                                    -- 'ldr' instruction goes to stage five
-                                    stage <= fifth_ldr;
-                                    Address_To_DM <= to_integer(unsigned(result_from_ALU));
+                                    ALU_ON <= '1';
                                 end if;
-
+    
+                            -- Branch instructions
+                            elsif(class = branch) then
+                                -- Instruction complete, set flow to done
+                                flow <= done;
+                                -- Branch instructions complete here (go to common stage)
+                                stage <= common_first;
+    
+                                if(current_ins = bal) then
+                                    PC <= PC + 1 + (to_integer(signed(B))/4);
+                                elsif(current_ins = beq and Zero_Flag = '1') then
+                                    PC <= PC + 1 + (to_integer(signed(B))/4);
+                                elsif(current_ins = bne and Zero_Flag = '0') then
+                                    PC <= PC + 1 + (to_integer(signed(B))/4);
+                                end if;
+                            
+                            -- Class is Unknown, return to Common_first
+                            else 
+                                stage <= common_first;
                             end if;
-
-                        -- Fifth stage (only for ldr instruction)
-                        when fifth_ldr =>
-                            -- Capturing the loaded data from DM and putting it to destination
-                            if(current_ins = ldr) then
-                                RF(to_integer(unsigned(RD))) <= Data_From_DM;
+    
+                        end if;
+    
+                    -- Fourth stage (specific)
+                    when fourth =>
+                        if(flow = onestep or flow = oneinstr or flow = cont) then
+                            -- Turn off the ALU
+                            ALU_ON <= '0';
+    
+                            if(class = DP) then
+                                -- DP instructions complete here
+                                stage <= common_first;
+                                -- Instruction complete, set flow to done
+                                flow <= done;
+                                -- Save the result from ALU to the desired register
+                                RF(to_integer(unsigned(RD))) <= result_from_ALU;
+    
+                            elsif(current_ins = str) then
+                                -- 'str' instruction complete here
+                                stage <= common_first;
+                                -- Instruction complete, set flow to done
+                                flow <= done;
+                                -- 'str' related operations
+                                Data_To_DM <= RF(to_integer(unsigned(RD)));
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU));
+    
+                            elsif(current_ins = ldr) then
+                                -- 'ldr' instruction goes to stage five
+                                stage <= fifth_ldr;
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU));
                             end if;
-                            -- Red flag set for completion of instruction
-                            red_flag <= '1';
-                            -- 'ldr' instruction complete here
-                            stage <= common_first;
-
-                        when others =>
-                            -- Should not be reached
-                    end case;
-                end if;
-        end process;
+    
+                        end if;
+    
+                    -- Fifth stage (only for ldr instruction)
+                    when fifth_ldr =>
+                        -- Capturing the loaded data from DM and putting it to destination
+                        if(current_ins = ldr) then
+                            RF(to_integer(unsigned(RD))) <= Data_From_DM;
+                        end if;
+                        -- Instruction complete, set flow to done
+                        flow <= done;
+                        -- 'ldr' instruction complete here
+                        stage <= common_first;
+    
+                    when others =>
+                        -- Should not be reached
+                end case;
+    ------------------------------------------
+    --  FLOW FSM
+                case flow is
+                    when initial => if(go = '1') then
+                                        flow <= cont;
+                                    elsif(step = '1') then
+                                        flow <= onestep;
+                                    elsif(instr = '1') then
+                                        flow <= oneinstr;
+                                    elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then
+                                        flow <= initial;
+                                    end if;
+                
+                    when cont =>    if(instruction = "00000000000000000000000000000000") then
+                                        flow <= done;
+                                    -- The above instruction is always check before the third stage is executed, thus complying with ASM
+                                    elsif(reset = '1') then
+                                        flow <= initial;
+                                    else
+                                        flow <= cont;
+                                    end if;
+                
+                    when oneinstr => NULL;
+                
+                    when onestep => flow<=done;
+                
+                    when done =>    if(step = '0' and go = '0' and instr='0') then
+                                        flow <= initial;
+                                    elsif(step = '1' or go = '1' or instr = '1') then
+                                        flow <= done;
+                                    elsif(reset = '1') then
+                                        flow <= initial;
+                                    end if;
+                end case;
+    ------------------------------------------
+            end if;
+    end process;    
 end Behavioral;

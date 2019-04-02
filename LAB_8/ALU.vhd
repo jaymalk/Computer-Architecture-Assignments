@@ -7,7 +7,7 @@ use work.Data_Type.all;
 entity ALU is
     Port (
             -- Input Parameters
-            work: in std_logic;   -- Logic for allowing use
+            work: in std_logic;    -- Logic for allowing use
             A_ALU, B_ALU : in std_logic_vector(31 downto 0); -- Input Values
             input_instruction : in instruction_type; -- Instruction to follow
 
@@ -15,6 +15,8 @@ entity ALU is
             result : out std_logic_vector(31 downto 0); -- Result of ALU calculation
             Z_Flag : out std_logic -- Zero flag
             C_Flag : out std_logic -- Carry flag
+            V_Flag : out std_logic -- Overflow flag
+            N_Flag : out std_logic -- Negative flag
           );
 end ALU;
 
