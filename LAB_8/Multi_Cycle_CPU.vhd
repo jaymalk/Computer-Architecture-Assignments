@@ -75,7 +75,7 @@ architecture Behavioral of CPU_MULTI is
     -- Signals for preprocessing Shifter parameters
     signal shift_amnt : std_logic_vector(4 downto 0); -- Shift Amount
     signal shift_tp : std_logic_vector(1 downto 0); -- Type of shift
-    signal C_Shift : std_logic := 0; -- C bit from the shifter
+    signal C_Shift : std_logic := '0'; -- C bit from the shifter
 
     -- Signal for keeping in check the flags
     signal Zero_Flag, Carry_Flag, Neg_Flag, Over_Flag, Set_Flag: std_logic;
@@ -114,9 +114,9 @@ architecture Behavioral of CPU_MULTI is
 
             -- Output Parameters
             result : out std_logic_vector(31 downto 0); -- Result of ALU calculation
-            Z_Flag : out std_logic -- Zero flag
-            C_Flag : out std_logic -- Carry flag
-            V_Flag : out std_logic -- Overflow flag
+            Z_Flag : out std_logic; -- Zero flag
+            C_Flag : out std_logic; -- Carry flag
+            V_Flag : out std_logic; -- Overflow flag
             N_Flag : out std_logic -- Negative flag
           );
     end component;
@@ -213,9 +213,9 @@ begin
             -- Immediate Flag not set and Shift amount immediate
                 instruction(11 downto 7) when  (F_Class = "00" and Immediate='0' and instruction(4) = '0') else
             -- Immediate Flag not set and Shift amount not immediate
-                RF(to_integer(unsigned(instruction(11 downto 8))))(4 downto 0) (F_Class = "00" and Immediate='0' and instruction(4) = '1') else
+                RF(to_integer(unsigned(instruction(11 downto 8))))(4 downto 0) when (F_Class = "00" and Immediate='0' and instruction(4) = '1') else
             -- No other possible case
-                "00000" when others;
+                "00000";
     -- Preprocessing the shift type from the instruction
     shift_tp <=
             -- Immediate Flag Set (ROR only)
@@ -230,7 +230,7 @@ begin
             work => ALU_ON,
             A_ALU => A,
             B_ALU => B,
-            C => C_Flag,
+            C => Carry_Flag,
             input_instruction => current_ins,
             -- Output parameters
             result => result_from_ALU,
@@ -244,11 +244,11 @@ begin
     Rajat_Shifter : Shifter
         Port Map (
             -- Input paramters
-            input_vector => RM_val;
-            shift_amount => shift_amnt;
-            shift_type => shift_tp;
+            input_vector => RM_val,
+            shift_amount => shift_amnt,
+            shift_type => shift_tp,
             -- Output parameters
-            output_vector  => shift_val;
+            output_vector  => shift_val,
             C_bit => C_Shift
         );
 
@@ -309,7 +309,7 @@ begin
                             B <= shift_val;
                             -- Setting the Shifted C_bit to C_FLag (IF SET FLAG IS SET)
                             if (Set_Flag = '1') then
-                                C_Flag <= C_Shift;
+                                Carry_Flag <= C_Shift;
                             end if;
                             -- Moving to next stage
                             stage <= third;

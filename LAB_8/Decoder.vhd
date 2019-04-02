@@ -3,8 +3,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use work.Data_Type.all;
 
--- The entity for describing a de  when (opcode = "0100" and class = "00") elsecoder
-for instruction decoding
+-- The entity for describing a decoder
+-- for instruction decoding
 entity Decoder is
   Port (
         -- Input parameters

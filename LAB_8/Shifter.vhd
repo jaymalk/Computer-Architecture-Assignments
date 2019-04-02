@@ -16,7 +16,7 @@ entity Shifter is
           );
 end Shifter;
 
-architecture Behavioral of ALU is
+architecture Behavioral of Shifter is
         signal shift_by_1, shift_by_2, shift_by_4, shift_by_8, shift_by_16 : std_logic_vector(31 downto 0);
     begin
 
