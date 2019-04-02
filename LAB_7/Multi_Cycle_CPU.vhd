@@ -79,10 +79,6 @@ architecture Behavioral of CPU_MULTI is
     type flow_type is (initial, cont, onestep, oneinstr, done);
     signal flow: flow_type := initial;
 
-    -- Red flag signal to decide the current position in an instruction
-    -- Helper for 'oneinstr' flow type.
---    signal red_flag : std_logic := '0';
-
     -- State signal and types for CPU controller FSM (cycle stage)
     type stage_type is (common_first, common_second, third, fourth, fifth_ldr);
     signal stage : stage_type := common_first ;
@@ -199,57 +195,16 @@ begin
     RF_For_Display <= RF;
 
 
-    -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
-        -- Modified for oneinstr. Most instructions same, little modification in initial.
---     process(main_clock)
---     begin
---        if(main_clock'Event and main_clock='0') then
---            case flow is
-
---                when initial => if(go = '1') then
---                                    flow <= cont;
---                                elsif(step = '1') then
---                                    flow <= onestep;
---                                elsif(instr = '1') then
---                                    flow <= oneinstr;
---                                elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then
---                                    flow <= initial;
---                                end if;
-
---                when cont =>    if(instruction = "00000000000000000000000000000000") then
---                                    flow <= done;
---                                -- The above instruction is always check before the third stage is executed, thus complying with ASM
---                                elsif(reset = '1') then
---                                    flow <= initial;
---                                else
---                                    flow <= cont;
---                                end if;
-
---                when oneinstr => if(red_flag = '1') then
---                                    flow <= done;
---                                elsif(reset = '1') then
---                                    flow <= initial;
---                                end if;
-
---                when onestep => flow<=done;
-
---                when done =>    if(step = '0' and go = '0' and instr='0') then
---                                    flow <= initial;
---                                elsif(step = '1' or go = '1' or instr = '1') then
---                                    flow <= done;
---                                elsif(reset = '1') then
---                                    flow <= initial;
---                                end if;
---            end case;
---        end if;
---     end process;
-
-    -- MAIN WORKING FOR THE CPU (ALU)
-                -- NEW MULTI CYCLE CODE
-                -- FOR NOW TESTING FSM IS IGNORED (THESE CAN BE ADDED EASILY LATER ON)
+    -- BOTH FMS'S FOR STAGE && FLOW_COMMAND
+        -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
+            -- Modified for oneinstr. Most instructions same, little modification in initial.
+        -- MAIN WORKING FOR THE CPU (ALU)
+            -- NEW MULTI CYCLE CODE
+            -- FOR NOW TESTING FSM IS IGNORED (THESE CAN BE ADDED EASILY LATER ON)
         process(main_clock)
         begin
-
+            ------------------------------------------
+            -- CPU FSM
                 if(reset='1') then
                     PC <= PC_Start;
                     stage <= common_first;
@@ -306,8 +261,7 @@ begin
 
                                 -- Branch instructions
                                 elsif(class = branch) then
-                                    -- Set red flag for 'oneinstr'
---                                    red_flag <= '1';
+                                    -- Instruction complete, set flow to done
                                     flow <= done;
                                     -- Branch instructions complete here (go to common stage)
                                     stage <= common_first;
@@ -336,8 +290,7 @@ begin
                                 if(class = DP) then
                                     -- DP instructions complete here
                                     stage <= common_first;
-                                    -- Red flag set to mark completion (DP)
---                                    red_flag <= '1';
+                                    -- Instruction complete, set flow to done
                                     flow <= done;
                                     -- Save the result from ALU to the desired register
                                     RF(to_integer(unsigned(RD))) <= result_from_ALU;
@@ -345,8 +298,7 @@ begin
                                 elsif(current_ins = str) then
                                     -- 'str' instruction complete here
                                     stage <= common_first;
-                                    -- Red flag set to mark completion (str)
---                                    red_flag <= '1';
+                                    -- Instruction complete, set flow to done
                                     flow <= done;
                                     -- 'str' related operations
                                     Data_To_DM <= RF(to_integer(unsigned(RD)));
@@ -366,8 +318,7 @@ begin
                             if(current_ins = ldr) then
                                 RF(to_integer(unsigned(RD))) <= Data_From_DM;
                             end if;
-                            -- Red flag set for completion of instruction
---                            red_flag <= '1';
+                            -- Instruction complete, set flow to done
                             flow <= done;
                             -- 'ldr' instruction complete here
                             stage <= common_first;
@@ -375,43 +326,41 @@ begin
                         when others =>
                             -- Should not be reached
                     end case;
+        ------------------------------------------
+        --  FLOW FSM
                     case flow is
+                        when initial => if(go = '1') then
+                                            flow <= cont;
+                                        elsif(step = '1') then
+                                            flow <= onestep;
+                                        elsif(instr = '1') then
+                                            flow <= oneinstr;
+                                        elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then
+                                            flow <= initial;
+                                        end if;
                     
-                                    when initial => if(go = '1') then
-                                                        flow <= cont;
-                                                    elsif(step = '1') then
-                                                        flow <= onestep;
-                                                    elsif(instr = '1') then
-                                                        flow <= oneinstr;
-                                                    elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then
-                                                        flow <= initial;
-                                                    end if;
+                        when cont =>    if(instruction = "00000000000000000000000000000000") then
+                                            flow <= done;
+                                        -- The above instruction is always check before the third stage is executed, thus complying with ASM
+                                        elsif(reset = '1') then
+                                            flow <= initial;
+                                        else
+                                            flow <= cont;
+                                        end if;
                     
-                                    when cont =>    if(instruction = "00000000000000000000000000000000") then
-                                                        flow <= done;
-                                                    -- The above instruction is always check before the third stage is executed, thus complying with ASM
-                                                    elsif(reset = '1') then
-                                                        flow <= initial;
-                                                    else
-                                                        flow <= cont;
-                                                    end if;
+                        when oneinstr => NULL;
                     
-                                    when oneinstr => NULL;
+                        when onestep => flow<=done;
                     
-                                    when onestep => flow<=done;
-                    
-                                    when done =>    if(step = '0' and go = '0' and instr='0') then
-                                                        flow <= initial;
-                                                    elsif(step = '1' or go = '1' or instr = '1') then
-                                                        flow <= done;
-                                                    elsif(reset = '1') then
-                                                        flow <= initial;
-                                                    end if;
-                                end case;
+                        when done =>    if(step = '0' and go = '0' and instr='0') then
+                                            flow <= initial;
+                                        elsif(step = '1' or go = '1' or instr = '1') then
+                                            flow <= done;
+                                        elsif(reset = '1') then
+                                            flow <= initial;
+                                        end if;
+                    end case;
+        ------------------------------------------
                 end if;
---                -- Ressetting the red flag
---                if(red_flag = '1') then
---                    red_flag <= '0';
---                end if;
         end process;
 end Behavioral;
