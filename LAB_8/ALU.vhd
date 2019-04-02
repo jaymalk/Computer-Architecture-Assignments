@@ -7,7 +7,7 @@ use work.Data_Type.all;
 entity ALU is
     Port (
             -- Input Parameters
-            work: in std_logic;    -- Logic for allowing use
+            work, C: in std_logic;    -- Logic for allowing use
             A_ALU, B_ALU : in std_logic_vector(31 downto 0); -- Input Values
             input_instruction : in instruction_type; -- Instruction to follow
 
@@ -30,7 +30,7 @@ architecture Behavioral of ALU is
             if(work = '1') then
                 -- DP instructions
 
-                if (input_instruction = ānd) then
+                if (input_instruction = not_nand) then
                     -- Taking AND of the values and putting in result.
                     result <= A_ALU AND B_ALU;
                 elsif (input_instruction = eor) then
@@ -45,22 +45,22 @@ architecture Behavioral of ALU is
 
                 elsif (input_instruction = sub) then
                     -- Subtracting the values and putting in result.
-                    result <= std_logic_vector(unsigned(A_ALU) - unsigned(B_ALU));
+                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(NOT B_ALU) + unsigned("00000000000000000000000000000001"));
                 elsif (input_instruction = rsb) then
                     -- Reverse subtracting the values and putting in result.
-                    result <= std_logic_vector(unsigned(B_ALU) - unsigned(A_ALU));
+                    result <= std_logic_vector(unsigned(B_ALU) + unsigned(NOT A_ALU) + unsigned("00000000000000000000000000000001"));
                 elsif(input_instruction = add) then
                     -- Adding the values and putting in result.
                     result <= std_logic_vector(unsigned(A_ALU) + unsigned(B_ALU));
                 elsif (input_instruction = adc) then
                     -- Adding with carry the values and putting in result.
-                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(B_ALU) + C_Flag);
+                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(B_ALU) + C);
                 elsif (input_instruction = sbc) then
                     -- Subtracting with carry the values and putting in result.
-                    result <= std_logic_vector(unsigned(A_ALU) - unsigned(B_ALU) - C_Flag);
+                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(NOT B_ALU) + C);
                 elsif (input_instruction = rsc) then
                     -- Reverse subtracting with carry the values and putting in result.
-                    result <= std_logic_vector(unsigned(B_ALU) - unsigned(A_ALU) - C_Flag);
+                    result <= std_logic_vector(unsigned(B_ALU) + unsigned(NOT A_ALU) + C);
 
                 elsif (input_instruction = mov) then
                     -- Simple mov operation, value in B_ALU is the moved value.
@@ -71,7 +71,7 @@ architecture Behavioral of ALU is
 
                 elsif (input_instruction = cmp) then
                     -- Compare operation, Z flag changed here.
-                    result <= std_logic_vector(unsigned(A_ALU) - unsigned(B_ALU));
+                    result <= std_logic_vector(unsigned(A_ALU) + unsigned(NOT B_ALU) + unsigned("00000000000000000000000000000001"));
                     -- Setting the Zero Flag
                     if(A_ALU = B_ALU) then
                         Z_Flag <= '1';

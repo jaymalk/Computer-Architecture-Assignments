@@ -75,10 +75,13 @@ architecture Behavioral of CPU_MULTI is
     -- Signals for preprocessing Shifter parameters
     signal shift_amnt : std_logic_vector(4 downto 0); -- Shift Amount
     signal shift_tp : std_logic_vector(1 downto 0); -- Type of shift
-    signal C_BIT_NO : std_logic := 0; -- Not Used
+    signal C_Shift : std_logic := 0; -- C bit from the shifter
 
     -- Signal for keeping in check the flags
-    signal Zero_Flag, Carry_Flag, Neg_Flag, Over_Flag: std_logic;
+    signal Zero_Flag, Carry_Flag, Neg_Flag, Over_Flag, Set_Flag: std_logic;
+
+    -- Signals for new flags from ALU
+    signal Zero_Flag_ALU, Carry_Flag_ALU, Neg_Flag_ALU, Over_Flag_ALU: std_logic;
 
     -- State signal and types for the CPU tester FSM
     type flow_type is (initial, cont, onestep, oneinstr, done);
@@ -105,7 +108,7 @@ architecture Behavioral of CPU_MULTI is
     component ALU
         Port (
             -- Input Parameters
-            work: in std_logic;    -- Logic for allowing use
+            work, C: in std_logic;    -- Logic for allowing use
             A_ALU, B_ALU : in std_logic_vector(31 downto 0); -- Input Values
             input_instruction : in instruction_type; -- Instruction to follow
 
@@ -162,6 +165,9 @@ begin
     -- Shift specification and opcodes
     Shift <= instruction(11 downto 4);
     Opcode <= instruction(24 downto 21);
+
+    -- Setting SET_FLAG from instruction
+    Set_Flag <= instruction(20);
 
     -- Deciding instruction class from the F_Class --
     with F_Class select class <=
@@ -224,13 +230,14 @@ begin
             work => ALU_ON,
             A_ALU => A,
             B_ALU => B,
+            C => C_Flag,
             input_instruction => current_ins,
             -- Output parameters
             result => result_from_ALU,
-            Z_Flag => Zero_FLag,
-            C_Flag => Carry_Flag,
-            V_Flag => Over_Flag,
-            N_Flag => Neg_Flag
+            Z_Flag => Zero_FLag_ALU,
+            C_Flag => Carry_Flag_ALU,
+            V_Flag => Over_Flag_ALU,
+            N_Flag => Neg_Flag_ALU
         );
 
     -- Mapping Shifter with parameters
@@ -242,7 +249,7 @@ begin
             shift_type => shift_tp;
             -- Output parameters
             output_vector  => shift_val;
-            C_bit => C_BIT_NO -- Not using this as of now
+            C_bit => C_Shift
         );
 
     -- Linking signals with OUTPUT values.
@@ -300,6 +307,11 @@ begin
                         if(flow = onestep or flow = oneinstr or flow = cont) then
                             -- Setting the Shifted value in B
                             B <= shift_val;
+                            -- Setting the Shifted C_bit to C_FLag (IF SET FLAG IS SET)
+                            if (Set_Flag = '1') then
+                                C_Flag <= C_Shift;
+                            end if;
+                            -- Moving to next stage
                             stage <= third;
                         end if;
     
@@ -361,6 +373,13 @@ begin
                                 flow <= done;
                                 -- Save the result from ALU to the desired register
                                 RF(to_integer(unsigned(RD))) <= result_from_ALU;
+                                -- If set flag is on, then set the flags to flags from ALU
+                                if(Set_Flag = '1') then
+                                    Zero_FLag <= Zero_FLag_ALU;
+                                    Carry_Flag <= Carry_Flag_ALU;
+                                    Over_Flag <= Over_Flag_ALU;
+                                    Neg_Flag <= Neg_Flag_ALU;
+                                end if;
     
                             elsif(current_ins = str) then
                                 -- 'str' instruction complete here
