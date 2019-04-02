@@ -62,7 +62,7 @@ architecture Behavioral of CPU_MULTI is
     signal RD, RN: std_logic_vector(3 downto 0);
 
     -- Value associated with the third operand (RM or llM)
-    signal RM_val: std_logic_vector(31 downto 0);
+    signal RM_val, shift_val: std_logic_vector(31 downto 0);
 
     -- Values held by RM and RN (which may be used by ALU)
     signal A, B : std_logic_vector(31 downto 0);
@@ -72,6 +72,11 @@ architecture Behavioral of CPU_MULTI is
     -- Signal represting the program counter (PC)
     signal PC: integer := 0;
 
+    -- Signals for preprocessing Shifter parameters
+    signal shift_amnt : std_logic_vector(4 downto 0); -- Shift Amount
+    signal shift_tp : std_logic_vector(1 downto 0); -- Type of shift
+    signal C_BIT_NO : std_logic := 0; -- Not Used
+
     -- Signal for keeping in check the flags
     signal Zero_Flag, Carry_Flag, Neg_Flag, Over_Flag: std_logic;
 
@@ -80,9 +85,10 @@ architecture Behavioral of CPU_MULTI is
     signal flow: flow_type := initial;
 
     -- State signal and types for CPU controller FSM (cycle stage)
-    type stage_type is (common_first, common_second, third, fourth, fifth_ldr);
+    type stage_type is (common_first, common_second, shift_stage, third, fourth, fifth_ldr);
     signal stage : stage_type := common_first ;
 
+    -- Decoder module
     component decoder
       Port (
             -- Input parameters
@@ -111,6 +117,20 @@ architecture Behavioral of CPU_MULTI is
             N_Flag : out std_logic -- Negative flag
           );
     end component;
+
+    -- Shifter component from the Shifter module
+    component Shifter
+        Port (
+                -- Input Parameters
+                input_vector : in std_logic_vector(31 downto 0);   -- Input Vector
+                shift_amount : in std_logic_vector(4 downto 0); -- Shift Amount
+                shift_type : in std_logic_vector(1 downto 0); -- Shift Type
+    
+                -- Output Parameters
+                output_vector : out std_logic_vector(31 downto 0); -- Result of Shift
+                C_bit : out std_logic -- Carry bit
+              );
+    end component ;
 
     -- Signal for handeling working and result from ALU
     signal ALU_ON : std_logic := '0';
@@ -162,7 +182,7 @@ begin
             instruction => current_ins -- Assigning the current instruction
         );
 
-    -- Providing the value to the last operand (Depending on the situation) --
+    -- Providing the value to the last operand, without shift (Depending on the situation) --
     RM_val <=
             -- DP instruction
                 -- Third operand is Register
@@ -180,6 +200,23 @@ begin
                 -- Arithmetic shift (& multiplied by 4) | Negative Jump
                 "111111" & instruction(23 downto 0) & "00"  when (F_Class = "10" and instruction(23) = '1');
 
+    -- Preprocessing the complete shift amount vector from the instruction
+    shift_amnt <=
+            -- Immediate Flag Set (ROR and Immediate Shift Operand)
+                instruction(11 downto 8) & '0' when (F_Class = "00" and Immediate='1') else
+            -- Immediate Flag not set and Shift amount immediate
+                instruction(11 downto 7) when  (F_Class = "00" and Immediate='0' and instruction(4) = '0') else
+            -- Immediate Flag not set and Shift amount not immediate
+                RF(to_integer(unsigned(instruction(11 downto 8))))(4 downto 0) (F_Class = "00" and Immediate='0' and instruction(4) = '1') else
+            -- No other possible case
+                "00000" when others;
+    -- Preprocessing the shift type from the instruction
+    shift_tp <=
+            -- Immediate Flag Set (ROR only)
+            "11" when (F_Class = "00" and Immediate='1') else
+            -- Immediate Flag not set
+            instruction(6 downto 5) when  (F_Class = "00" and Immediate='0');
+
     -- Mapping ALU with other signals
     ALU_ref : ALU
         Port Map (
@@ -194,6 +231,18 @@ begin
             C_Flag => Carry_Flag,
             V_Flag => Over_Flag,
             N_Flag => Neg_Flag
+        );
+
+    -- Mapping Shifter with parameters
+    Rajat_Shifter : Shifter
+        Port Map (
+            -- Input paramters
+            input_vector => RM_val;
+            shift_amount => shift_amnt;
+            shift_type => shift_tp;
+            -- Output parameters
+            output_vector  => shift_val;
+            C_bit => C_BIT_NO -- Not using this as of now
         );
 
     -- Linking signals with OUTPUT values.
@@ -239,6 +288,18 @@ begin
                             -- Saves a lot of effort in later cases. (Different from provided ASM)
                             B <= RM_val;
                             -- Go to next stage
+                            if(class = DP) then
+                                stage <= shift_stage;
+                            else
+                                stage <= third;
+                            end if;
+                        end if;
+
+                    -- Intermediate Stage for shifting
+                    when shift_stage =>
+                        if(flow = onestep or flow = oneinstr or flow = cont) then
+                            -- Setting the Shifted value in B
+                            B <= shift_val;
                             stage <= third;
                         end if;
     
