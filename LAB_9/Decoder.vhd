@@ -3,8 +3,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use work.Data_Type.all;
 
--- The entity for describing a de  when (opcode = "0100" and class = "00") elsecoder
-for instruction decoding
+-- The entity for describing a decoder
+-- for instruction decoding
 entity Decoder is
   Port (
         -- Input parameters
@@ -21,7 +21,7 @@ end Decoder;
 architecture architecture_decoder of Decoder is
 begin
     instruction <=  -- DP
-                    ānd when (opcode = "0000" and class = "00") else
+                    not_nand when (opcode = "0000" and class = "00") else
                     eor when (opcode = "0001" and class = "00") else
                     sub when (opcode = "0010" and class = "00") else
                     rsb when (opcode = "0011" and class = "00") else

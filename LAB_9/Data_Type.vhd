@@ -16,7 +16,7 @@ package data_type is
     type instruction_type is
     (
         -- DP
-        _and, eor, sub, rsb, add, adc, sbc, rsc, tst, teq, cmp, cmn, orr, mov, bic, mvn,
+        not_nand, eor, sub, rsb, add, adc, sbc, rsc, tst, teq, cmp, cmn, orr, mov, bic, mvn,
         -- DT
         ldr, str,
         -- Branching
