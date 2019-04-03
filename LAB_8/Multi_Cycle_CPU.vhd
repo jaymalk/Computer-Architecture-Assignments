@@ -270,6 +270,7 @@ begin
             if(reset='1') then
                 PC <= PC_Start;
                 stage <= common_first;
+                flow <= initial;
     
             elsif(main_clock='1' and main_clock'event) then
                 -- Deciding the current stage
