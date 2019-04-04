@@ -314,6 +314,10 @@ begin
                             end if;
                             -- Moving to next stage
                             stage <= third;
+                        elsif (flow = done) then
+                            if(instruction = "00000000000000000000000000000000") then
+                                stage <= common_first;
+                            end if;
                         end if;
     
                     -- Third stage (Common in classes)
