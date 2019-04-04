@@ -1,4 +1,4 @@
-@ Sum of powers of 2 till index 10 (different method)
+@ Sum of powers of 2 till index 10 (different method O(2^n))
 @ Program : 5
 
 .text
@@ -17,6 +17,7 @@ loop:
     add r2, r2, #1
 
 loop_end:
+    add r1, r1, #1
     b loop 
    
 exit:
