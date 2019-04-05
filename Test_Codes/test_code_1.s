@@ -3,7 +3,7 @@
 .text
     mov r1, #255               @ 8-1  ONEs
     mov r2, r1, LSL #8         @ 16-9 ONEs
-    oor r4, r1, r2             @ 16-1 ONEs
+    orr r4, r1, r2             @ 16-1 ONEs
     eor r5, r4, r4, LSL #16    @ ALL  ONEs
     mov r3, #1                 @ Single one, throughout
 loop:

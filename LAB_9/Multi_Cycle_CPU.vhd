@@ -270,6 +270,7 @@ begin
             if(reset='1') then
                 PC <= PC_Start;
                 stage <= common_first;
+                flow <= initial;
     
             elsif(main_clock='1' and main_clock'event) then
                 -- Deciding the current stage
@@ -313,6 +314,10 @@ begin
                             end if;
                             -- Moving to next stage
                             stage <= third;
+                        elsif (flow = done) then
+                            if(instruction = "00000000000000000000000000000000") then
+                                stage <= common_first;
+                            end if;
                         end if;
     
                     -- Third stage (Common in classes)
@@ -372,7 +377,10 @@ begin
                                 -- Instruction complete, set flow to done
                                 flow <= done;
                                 -- Save the result from ALU to the desired register
-                                RF(to_integer(unsigned(RD))) <= result_from_ALU;
+                                -- If that is allowed by the instruction (not by cmp, cmn, tst, teq)
+                                if(not(current_ins = tst) and not(current_ins = teq) and not(current_ins = cmp) and not(current_ins = cmn)) then
+                                    RF(to_integer(unsigned(RD))) <= result_from_ALU;
+                                end if;
                                 -- If set flag is on, then set the flags to flags from ALU
                                 if(Set_Flag = '1') then
                                     Zero_FLag <= Zero_FLag_ALU;
