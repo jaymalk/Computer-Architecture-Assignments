@@ -12,8 +12,16 @@ loop:
     eor r7, r5, r6
     mov r1, r1, LSL #1
     mov r2, r2, LSR #1
-    cmn r3, #257
+    cmn r3, #129
     beq exit
     bic r3, r5, r3, ROR #31
     b loop
 exit:
+    swi 0x11
+
+
+
+@ E3A010FF,E1A02401,E1814002,E0245804,
+@ E3A03001,E1E03003,E0226001,E0257006,
+@ E1A01081,E1A020A2,E3730081,0A000001,
+@ E1C53FE3,EAFFFFF6,
