@@ -17,8 +17,10 @@ package data_type is
     (
         -- DP
         not_nand, eor, sub, rsb, add, adc, sbc, rsc, tst, teq, cmp, cmn, orr, mov, bic, mvn,
-        -- DT
-        ldr, str,
+        -- DT (orignial)
+        ldr, str, ldrb, strb,
+        -- DT (signed category)
+        ldrh, strh, ldrsh, strsh, ldrsb, strsb
         -- Branching
         beq, bne, bal,
         -- For error and default
