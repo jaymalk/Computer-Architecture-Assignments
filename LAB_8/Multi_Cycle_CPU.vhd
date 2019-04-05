@@ -377,7 +377,10 @@ begin
                                 -- Instruction complete, set flow to done
                                 flow <= done;
                                 -- Save the result from ALU to the desired register
-                                RF(to_integer(unsigned(RD))) <= result_from_ALU;
+                                -- If that is allowed by the instruction (not by cmp, cmn, tst, teq)
+                                if((curr_ins != tst) && (curr_ins != teq) && (curr_ins != cmp) && (curr_ins != cmn)) then
+                                    RF(to_integer(unsigned(RD))) <= result_from_ALU;
+                                end if;
                                 -- If set flag is on, then set the flags to flags from ALU
                                 if(Set_Flag = '1') then
                                     Zero_FLag <= Zero_FLag_ALU;
