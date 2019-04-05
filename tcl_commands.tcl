@@ -35,3 +35,9 @@ add_force {/TestBench/Program_Select} -radix bin {111 0ns}
 add_force {/TestBench/reset} -radix bin {1 10ns}
 add_force {/TestBench/reset} -radix bin {0 50ns}
 run 60ns
+
+#Run One instr
+add_force {/TestBench/instr} -radix bin {1 0ns}
+run 60ns
+add_force {/TestBench/instr} -radix bin {0 0ns}
+run 10ns

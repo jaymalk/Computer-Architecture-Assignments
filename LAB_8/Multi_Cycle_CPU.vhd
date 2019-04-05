@@ -378,7 +378,7 @@ begin
                                 flow <= done;
                                 -- Save the result from ALU to the desired register
                                 -- If that is allowed by the instruction (not by cmp, cmn, tst, teq)
-                                if((curr_ins != tst) && (curr_ins != teq) && (curr_ins != cmp) && (curr_ins != cmn)) then
+                                if(not(current_ins = tst) and not(current_ins = teq) and not(current_ins = cmp) and not(current_ins = cmn)) then
                                     RF(to_integer(unsigned(RD))) <= result_from_ALU;
                                 end if;
                                 -- If set flag is on, then set the flags to flags from ALU
