@@ -31,6 +31,9 @@ architecture architecture_decoder of Decoder_New is
     signal cond : std_logic_vector(3 downto 0);
     -- Parameters (for DT)
     signal I, P, U, B, W, L : std_logic;
+    -- Signal separation for special class (DT F = "00")
+    signal INR, R : std_logic;
+    signal SH : std_logic_vector(1 downto 0);
 
 begin
 
@@ -48,6 +51,10 @@ begin
     B <= instruction(22);
     W <= instruction(21);
     L <= instruction(20);
+    -- Special (DT with F = "00")
+    SH <= instruction(6 downto 5);
+    INR <= instruction(4);
+    R <= instruction(7);
 
 -- Main Decoding Part
 
