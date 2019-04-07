@@ -92,15 +92,26 @@ architecture Behavioral of CPU_MULTI is
     signal stage : stage_type := common_first ;
 
     -- Decoder module
-    component decoder
-      Port (
+    -- component decoder
+    --   Port (
+    --         -- Input parameters
+    --         opcode : in std_logic_vector(3 downto 0); -- Opcode
+    --         ls : in std_logic; -- Load_Store bit
+    --         cond : in std_logic_vector(3 downto 0); -- Condition
+    --         class : in std_logic_vector(1 downto 0); -- (F) class
+    --         -- Output parameter
+    --         instruction : out instruction_type -- The output instruction
+    --        );
+    -- end component;
+
+    -- New Decoder module
+    component Decoder_New
+        Port (
             -- Input parameters
-            opcode : in std_logic_vector(3 downto 0); -- Opcode
-            ls : in std_logic; -- Load_Store bit
-            cond : in std_logic_vector(3 downto 0); -- Condition
-            class : in std_logic_vector(1 downto 0); -- (F) class
+            instruction : in std_logic_vector(31 downto 0);
             -- Output parameter
-            instruction : out instruction_type -- The output instruction
+            command : out instruction_type;
+            command_class : out instruction_class
            );
     end component;
 
@@ -169,37 +180,60 @@ begin
     -- Setting SET_FLAG from instruction
     Set_Flag <= instruction(20);
 
+    -- NOT NEEDED, DECODER DECIDES NOW --
     -- Deciding instruction class from the F_Class --
-    with F_Class select class <=
-            DP when "00",
-            DT when "01",
-            branch when "10",
-            unknown when others;
+    -- with F_Class select class <=
+    --         DP when "00",
+    --         DT when "01",
+    --         branch when "10",
+    --         unknown when others;
 
 
-    Instruction_Decoder : Decoder
+    -- Instruction_Decoder : Decoder
+    --     Port Map (
+    --         -- Input Parameters
+    --         opcode => Opcode,
+    --         class => F_Class,
+    --         ls => Load_Store,
+    --         cond => Condition,
+    --         -- Output Paramter
+    --         instruction => current_ins -- Assigning the current instruction
+    --     );
+
+    Decoder : Decoder_New
         Port Map (
-            -- Input Parameters
-            opcode => Opcode,
-            class => F_Class,
-            ls => Load_Store,
-            cond => Condition,
-            -- Output Paramter
-            instruction => current_ins -- Assigning the current instruction
+            -- Input parameters
+            instruction => instruction,
+            -- Output parameter
+            command => current_ins,
+            command_class => class
         );
 
     -- Providing the value to the last operand, without shift (Depending on the situation) --
     RM_val <=
             -- DP instruction
                 -- Third operand is Register
-                RF(to_integer(unsigned(instruction(3 downto 0))))   when (F_Class = "00" and Immediate='0') else
+                RF(to_integer(unsigned(instruction(3 downto 0))))   when (class = DP and Immediate='0') else
                 -- Third operand is a vector offset
-                "000000000000000000000000" & instruction(7 downto 0)    when (F_Class = "00" and Immediate='1') else
-            -- DT instruction
-                -- Offset is added
-                "00000000000000000000" & instruction(11 downto 0)   when (F_Class = "01" and Up_Down='1') else
-                -- Offset is subtracted
-                "11111111111111111111" & instruction(11 downto 0)   when (F_Class = "01" and Up_Down='0') else
+                "000000000000000000000000" & instruction(7 downto 0)    when (class = DP and Immediate='1') else
+            -- DT instruction (F = "00") (PLEASE REVIEW U=0)
+                -- Offset is complete and added
+                "000000000000000000000000" & instruction(11 downto 8) & instruction(3 downto 0) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '1') else
+                -- Offset is complete and subtracted
+                "111111111111111111111111" & instruction(11 downto 8) & instruction(3 downto 0) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '0') else
+                -- Offset is register based and added
+                RF(to_integer(unsigned(instruction(3 downto 0)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '1')
+                -- Offset is register based and subtracted (review below)
+                NOT RF(to_integer(unsigned(instruction(3 downto 0)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '0')
+            -- DT instruction (original)
+                -- Offset is complete and added
+                "00000000000000000000" & instruction(11 downto 0) when (F_Class = "01" and Up_Down='1' and Immediate = '0') else
+                -- Offset is complete and subtracted
+                "11111111111111111111" & instruction(11 downto 0) when (F_Class = "01" and Up_Down='0' and Immediate = '0') else
+                -- Offset is register based and added
+                RF(to_integer(unsigned(instruction(3 downto 0)))) when (F_Class = "01" and Up_Down='1' and Immediate = '1') else
+                -- Offset is register based and subtracted (review below)
+                NOT RF(to_integer(unsigned(instruction(3 downto 0)))) when (F_Class = "01" and Up_Down='0' and Immediate = '1') else
             -- Branch instruction
                 -- Arithmetic shift (& multiplied by 4) | Positive Jump
                 "000000" & instruction(23 downto 0) & "00"  when (F_Class = "10" and instruction(23) = '0') else
@@ -208,20 +242,23 @@ begin
 
     -- Preprocessing the complete shift amount vector from the instruction
     shift_amnt <=
+         -- DP shifts
             -- Immediate Flag Set (ROR and Immediate Shift Operand)
-                instruction(11 downto 8) & '0' when (F_Class = "00" and Immediate='1') else
+                instruction(11 downto 8) & '0' when (class = DP and Immediate='1') else
             -- Immediate Flag not set and Shift amount immediate
-                instruction(11 downto 7) when  (F_Class = "00" and Immediate='0' and instruction(4) = '0') else
+                instruction(11 downto 7) when  (class = DP and Immediate='0' and instruction(4) = '0') else
             -- Immediate Flag not set and Shift amount not immediate
-                RF(to_integer(unsigned(instruction(11 downto 8))))(4 downto 0) when (F_Class = "00" and Immediate='0' and instruction(4) = '1') else
-            -- No other possible case
+                RF(to_integer(unsigned(instruction(11 downto 8))))(4 downto 0) when (class = DP and Immediate='0' and instruction(4) = '1') else
+        -- DT shifts
+                instruction(11 downto 7) when (class = DT and Immediate='1' and instruction(4) = '0') else
+        -- No other possible case
                 "00000";
     -- Preprocessing the shift type from the instruction
     shift_tp <=
             -- Immediate Flag Set (ROR only)
             "11" when (F_Class = "00" and Immediate='1') else
             -- Immediate Flag not set
-            instruction(6 downto 5) when  (F_Class = "00" and Immediate='0');
+            instruction(6 downto 5) when ((F_Class = "00" and Immediate='0') or (class = DT and Immediate='1'));
 
     -- Mapping ALU with other signals
     ALU_ref : ALU
