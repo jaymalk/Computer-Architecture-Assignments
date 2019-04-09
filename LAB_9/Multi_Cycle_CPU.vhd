@@ -3,7 +3,6 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use work.Data_Type.all;
 
-
 entity CPU_MULTI is
     Port (
             -- Input Parameters
@@ -224,20 +223,20 @@ begin
                 -- Offset is complete and added
                 "000000000000000000000000" & instruction(11 downto 8) & instruction(3 downto 0) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '1') else
                 -- Offset is complete and subtracted
-                "111111111111111111111111" & instruction(11 downto 8) & instruction(3 downto 0) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '0') else
+                std_logic_vector(unsigned(not ("00000000000000000000" & instruction(11 downto 8) & instruction(3 downto 0))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '0') else
                 -- Offset is register based and added
                 RF(to_integer(unsigned(instruction(3 downto 0)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '1') else
                 -- Offset is register based and subtracted (review below)
-                NOT RF(to_integer(unsigned(instruction(3 downto 0)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '0') else
+                std_logic_vector(unsigned(NOT RF(to_integer(unsigned(instruction(3 downto 0))))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '0') else
             -- DT instruction (original)
                 -- Offset is complete and added
                 "00000000000000000000" & instruction(11 downto 0) when (F_Class = "01" and Up_Down='1' and Immediate = '0') else
                 -- Offset is complete and subtracted
-                "11111111111111111111" & instruction(11 downto 0) when (F_Class = "01" and Up_Down='0' and Immediate = '0') else
+                std_logic_vector(unsigned(not ("00000000000000000000" & instruction(11 downto 0))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (F_Class = "01" and Up_Down='0' and Immediate = '0') else
                 -- Offset is register based and added
                 RF(to_integer(unsigned(instruction(3 downto 0)))) when (F_Class = "01" and Up_Down='1' and Immediate = '1') else
                 -- Offset is register based and subtracted (review below)
-                NOT RF(to_integer(unsigned(instruction(3 downto 0)))) when (F_Class = "01" and Up_Down='0' and Immediate = '1') else
+                std_logic_vector(unsigned(NOT RF(to_integer(unsigned(instruction(3 downto 0))))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (F_Class = "01" and Up_Down='0' and Immediate = '1') else
             -- Branch instruction
                 -- Arithmetic shift (& multiplied by 4) | Positive Jump
                 "000000" & instruction(23 downto 0) & "00"  when (F_Class = "10" and instruction(23) = '0') else
