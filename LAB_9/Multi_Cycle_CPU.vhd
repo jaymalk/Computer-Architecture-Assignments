@@ -374,25 +374,12 @@ begin
                     -- Third stage (Common in classes)
                     when third =>
                         if(flow = onestep or flow = oneinstr or flow = cont) then
-                            -- DP instructions
-                            if(class = DP) then
-                                    -- DP instructions go to fourth stage
+                            -- DP and DT instructions
+                            if(class = DP or class = DT) then
+                                    -- DP and DT instructions go to fourth stage
                                     stage <= fourth;
                                     -- Get result from ALU (in next cycle)
                                     ALU_ON <= '1';
-    
-                            -- DT instructions
-                            elsif(class = DT) then
-                                -- DT instructions go to fourth stage
-                                stage <= fourth;
-                                -- str instruction
-                                if(current_ins = str) then
-                                    ALU_ON <= '1';
-    
-                                -- ldr instruction
-                                elsif(current_ins = ldr) then
-                                    ALU_ON <= '1';
-                                end if;
     
                             -- Branch instructions
                             elsif(class = branch) then
@@ -464,12 +451,25 @@ begin
                                 Data_To_DM_1 <= RF(to_integer(unsigned(RD)))(23 downto 16);
                                 Data_To_DM_2 <= RF(to_integer(unsigned(RD)))(15 downto 8);
                                 Data_To_DM_3 <= RF(to_integer(unsigned(RD)))(7 downto 0);
-                                Address_To_DM <= to_integer(unsigned(result_from_ALU));
-    
-                            elsif(current_ins = ldr) then
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 0) && "00"));
+                                Memory_Component <= result_from_ALU(1 downto 0);
+
+                            elsif(current_ins = ldr or current_ins = ldrh or current_ins = ldrb or current_ins = ldrsb or current_ins = ldrsh) then
                                 -- 'ldr' instruction goes to stage five
                                 stage <= fifth_ldr;
-                                Address_To_DM <= to_integer(unsigned(result_from_ALU));
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
+                                Memory_Component <= result_from_ALU(1 downto 0);
+                
+                            elsif(current_ins = strh) then
+                                stage <= common_first;
+                                flow <= done;
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 0) && "00"));
+
+                            elsif(current_ins = strb) then
+                                stage <= common_first;
+                                flow <= done;
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 0) && "00"));
+                                
                             end if;
     
                         end if;
