@@ -59,7 +59,7 @@ begin
 -- Main Decoding Part
 
     command_class_out <= command_class;
-    
+
     command_class <= 
                 -- DP
                 DP when (class = "00" and (I='1' or (I='0' and (INR='0' or (INR='1' and R='0'))))) else
@@ -88,12 +88,12 @@ begin
                 bic when (cond = "1110" and opcode = "1110" and command_class = DP) else
                 mvn when (cond = "1110" and opcode = "1111" and command_class = DP) else
                 -- DT (Class = "00")
-                ldrsh when (cond = "1110" and SH = "11" and L = '1' and (B = '0' or (B = '1' and instruction(11 downto 8))) and command_class = DT) else
-                strsh when (cond = "1110" and SH = "11" and L = '0' and (B = '0' or (B = '1' and instruction(11 downto 8))) and command_class = DT) else
-                ldrh  when (cond = "1110" and SH = "01" and L = '1' and (B = '0' or (B = '1' and instruction(11 downto 8))) and command_class = DT) else
-                strh  when (cond = "1110" and SH = "01" and L = '0' and (B = '0' or (B = '1' and instruction(11 downto 8))) and command_class = DT) else
-                ldrsb when (cond = "1110" and SH = "10" and L = '1' and (B = '0' or (B = '1' and instruction(11 downto 8))) and command_class = DT) else
-                strsb when (cond = "1110" and SH = "10" and L = '0' and (B = '0' or (B = '1' and instruction(11 downto 8))) and command_class = DT) else
+                ldrsh when (cond = "1110" and SH = "11" and L = '1' and (B = '0' or (B = '1' and instruction(11 downto 8) = "0000")) and command_class = DT) else
+                strsh when (cond = "1110" and SH = "11" and L = '0' and (B = '0' or (B = '1' and instruction(11 downto 8) = "0000")) and command_class = DT) else
+                ldrh  when (cond = "1110" and SH = "01" and L = '1' and (B = '0' or (B = '1' and instruction(11 downto 8) = "0000")) and command_class = DT) else
+                strh  when (cond = "1110" and SH = "01" and L = '0' and (B = '0' or (B = '1' and instruction(11 downto 8) = "0000")) and command_class = DT) else
+                ldrsb when (cond = "1110" and SH = "10" and L = '1' and (B = '0' or (B = '1' and instruction(11 downto 8) = "0000")) and command_class = DT) else
+                strsb when (cond = "1110" and SH = "10" and L = '0' and (B = '0' or (B = '1' and instruction(11 downto 8) = "0000")) and command_class = DT) else
                 -- DT (Class = "01")
                 ldr  when (cond = "1110" and L = '1' and B = '0') else
                 str  when (cond = "1110" and L = '0' and B = '0') else
