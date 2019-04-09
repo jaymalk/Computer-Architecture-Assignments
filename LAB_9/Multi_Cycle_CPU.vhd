@@ -258,10 +258,13 @@ begin
                 "00000";
     -- Preprocessing the shift type from the instruction
     shift_tp <=
+        -- DP
             -- Immediate Flag Set (ROR only)
             "11" when (F_Class = "00" and Immediate='1') else
             -- Immediate Flag not set
-            instruction(6 downto 5) when ((F_Class = "00" and Immediate='0') or (class = DT and Immediate='1'));
+            instruction(6 downto 5) when  (F_Class = "00" and Immediate='0') else
+        -- DT
+            instruction(6 downto 5) when  (F_Class = "01" and Immediate='1');
 
     -- Mapping ALU with other signals
     ALU_ref : ALU
@@ -348,7 +351,7 @@ begin
                             -- Saves a lot of effort in later cases. (Different from provided ASM)
                             B <= RM_val;
                             -- Go to next stage
-                            if(class = DP) then
+                            if(class = DP or ((current_ins = ldr or current_ins = str) and  Immediate = '1') ) then
                                 stage <= shift_stage;
                             else
                                 stage <= third;
@@ -360,10 +363,6 @@ begin
                         if(flow = onestep or flow = oneinstr or flow = cont) then
                             -- Setting the Shifted value in B
                             B <= shift_val;
-                            -- Setting the Shifted C_bit to C_FLag (IF SET FLAG IS SET)
-                            if (Set_Flag = '1') then
-                                Carry_Flag <= C_Shift;
-                            end if;
                             -- Moving to next stage
                             stage <= third;
                         elsif (flow = done) then
@@ -435,10 +434,18 @@ begin
                                 end if;
                                 -- If set flag is on, then set the flags to flags from ALU
                                 if(Set_Flag = '1') then
+                                    -- Setting Z & N irrespective of type of DP
                                     Zero_FLag <= Zero_FLag_ALU;
-                                    Carry_Flag <= Carry_Flag_ALU;
-                                    Over_Flag <= Over_Flag_ALU;
                                     Neg_Flag <= Neg_Flag_ALU;
+                                    -- Setting V & C w.r.t. to constraints on setting
+                                    if(current_ins = sub or current_ins = rsb or current_ins = add or current_ins = adc or current_ins = sbc or current_ins = rsc or current_ins = cmp or current_ins = cmn) then
+                                        Over_Flag <= Over_Flag_ALU;
+                                        Carry_Flag <= Carry_Flag_ALU;
+                                    else
+                                        if(not shift_amnt = "00000") then
+                                            Carry_Flag <= C_Shift;
+                                        end if;
+                                    end if;
                                 end if;
     
                             elsif(current_ins = str) then
