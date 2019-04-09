@@ -302,16 +302,11 @@ begin
                                 stage <= third;
                             end if;
                         end if;
-
                     -- Intermediate Stage for shifting
                     when shift_stage =>
                         if(flow = onestep or flow = oneinstr or flow = cont) then
                             -- Setting the Shifted value in B
                             B <= shift_val;
-                            -- Setting the Shifted C_bit to C_FLag (IF SET FLAG IS SET)
-                            if (Set_Flag = '1') then
-                                Carry_Flag <= C_Shift;
-                            end if;
                             -- Moving to next stage
                             stage <= third;
                         elsif (flow = done) then
@@ -383,10 +378,18 @@ begin
                                 end if;
                                 -- If set flag is on, then set the flags to flags from ALU
                                 if(Set_Flag = '1') then
+                                    -- Setting Z & N irrespective of type of DP
                                     Zero_FLag <= Zero_FLag_ALU;
-                                    Carry_Flag <= Carry_Flag_ALU;
-                                    Over_Flag <= Over_Flag_ALU;
                                     Neg_Flag <= Neg_Flag_ALU;
+                                    -- Setting V & C w.r.t. to constraints on setting
+                                    if(current_ins = sub or current_ins = rsb or current_ins = add or current_ins = adc or current_ins = sbc or current_ins = rsc or current_ins = cmp or current_ins = cmn) then
+                                        Over_Flag <= Over_Flag_ALU;
+                                        Carry_Flag <= Carry_Flag_ALU;
+                                    else
+                                        if(not shift_amnt = "00000") then
+                                            Carry_Flag <= C_Shift;
+                                        end if;
+                                    end if;
                                 end if;
     
                             elsif(current_ins = str) then
