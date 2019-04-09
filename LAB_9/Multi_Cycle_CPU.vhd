@@ -479,6 +479,7 @@ begin
                                     Data_To_DM_2 <= RF(to_integer(unsigned(RD)))(7 downto 0);
                                     Data_To_DM_3 <= RF(to_integer(unsigned(RD)))(15 downto 8);
                                 end if;
+
                             elsif(current_ins = strb) then
                                 -- 'str' instruction complete here
                                 stage <= common_first;
@@ -498,7 +499,7 @@ begin
                                     Data_To_DM_3 <= RF(to_integer(unsigned(RD)))(7 downto 0);
                                 end if;
                                 Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
-                                
+
                             end if;
     
                         end if;
@@ -508,6 +509,49 @@ begin
                         -- Capturing the loaded data from DM and putting it to destination
                         if(current_ins = ldr) then
                             RF(to_integer(unsigned(RD))) <= Data_From_DM;
+                        
+                        elsif(current_ins = ldrh) then
+                            if(result_from_ALU(1 downto 0) = "00") then
+                                RF(to_integer(unsigned(RD))) <= "0000000000000000" & Data_From_DM_1 & Data_From_DM_0;
+                            else if (result_from_ALU(1 downto 0) = "10")  then
+                                RF(to_integer(unsigned(RD))) <= "0000000000000000" & Data_From_DM_3 & Data_From_DM_2;
+                            end if;
+
+                        elsif(current_ins = ldrb) then
+                            if(result_from_ALU(1 downto 0) = "00") then
+                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_0;
+                            else if (result_from_ALU(1 downto 0) = "01")  then
+                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_1;
+                            if(result_from_ALU(1 downto 0) = "10") then
+                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_2;
+                            else if (result_from_ALU(1 downto 0) = "11")  then
+                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_3;
+                            end if;
+                        
+                        elsif(current_ins = ldrsh) then
+                            if(result_from_ALU(1 downto 0) = "00") then
+                                RF(to_integer(unsigned(RD))) <= "0000000000000000" & Data_From_DM_1 & Data_From_DM_0 when (Data_From_DM_1(7) = '0') else
+                                                                "1111111111111111" & Data_From_DM_1 & Data_From_DM_0;
+                            else if (result_from_ALU(1 downto 0) = "10")  then
+                                RF(to_integer(unsigned(RD))) <= "0000000000000000" & Data_From_DM_3 & Data_From_DM_2 when (Data_From_DM_3(7) = '0') else
+                                                                "1111111111111111" & Data_From_DM_3 & Data_From_DM_2;
+                            end if;
+
+                        elsif(current_ins = ldrsb) then
+                            if(result_from_ALU(1 downto 0) = "00") then
+                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_0 when (Data_From_DM_0(7) = '0') else
+                                                                "111111111111111111111111" & Data_From_DM_0;
+                            else if (result_from_ALU(1 downto 0) = "01")  then
+                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_1 when (Data_From_DM_1(7) = '0') else
+                                                                "111111111111111111111111" & Data_From_DM_1;
+                            if(result_from_ALU(1 downto 0) = "10") then
+                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_2 when (Data_From_DM_2(7) = '0') else
+                                                                "111111111111111111111111" & Data_From_DM_2;
+                            else if (result_from_ALU(1 downto 0) = "11")  then
+                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_3 when (Data_From_DM_3(7) = '0') else
+                                                                "111111111111111111111111" & Data_From_DM_3;
+                            end if;
+
                         end if;
                         -- Instruction complete, set flow to done
                         flow <= done;
