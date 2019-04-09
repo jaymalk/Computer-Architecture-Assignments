@@ -300,12 +300,12 @@ begin
     RF_For_Display <= RF;
 
     --
-    Data_From_DM_0 <= Data_From_DM(31 downto 24);
-    Data_From_DM_1 <= Data_From_DM(23 downto 16);
-    Data_From_DM_2 <= Data_From_DM(15 downto 8);
-    Data_From_DM_3 <= Data_From_DM(7 downto 0);
+    Data_From_DM_3 <= Data_From_DM(31 downto 24);
+    Data_From_DM_2 <= Data_From_DM(23 downto 16);
+    Data_From_DM_1 <= Data_From_DM(15 downto 8);
+    Data_From_DM_0 <= Data_From_DM(7 downto 0);
 
-    Data_To_DM <= Data_To_DM_0 & Data_To_DM_1 & Data_To_DM_2 & Data_To_DM_3 ; 
+    Data_To_DM <= Data_To_DM_3 & Data_To_DM_2 & Data_To_DM_1 & Data_To_DM_0 ; 
 
     -- BOTH FMS'S FOR STAGE && FLOW_COMMAND
         -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
@@ -447,28 +447,57 @@ begin
                                 Write_Enable_3 <= '1';
                                 -- 'str' related operations
                                 --Data_To_DM <= RF(to_integer(unsigned(RD)));
-                                Data_To_DM_0 <= RF(to_integer(unsigned(RD)))(31 downto 24);
-                                Data_To_DM_1 <= RF(to_integer(unsigned(RD)))(23 downto 16);
-                                Data_To_DM_2 <= RF(to_integer(unsigned(RD)))(15 downto 8);
-                                Data_To_DM_3 <= RF(to_integer(unsigned(RD)))(7 downto 0);
-                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 0) && "00"));
-                                Memory_Component <= result_from_ALU(1 downto 0);
+                                Data_To_DM_3 <= RF(to_integer(unsigned(RD)))(31 downto 24);
+                                Data_To_DM_2 <= RF(to_integer(unsigned(RD)))(23 downto 16);
+                                Data_To_DM_1 <= RF(to_integer(unsigned(RD)))(15 downto 8);
+                                Data_To_DM_0 <= RF(to_integer(unsigned(RD)))(7 downto 0);
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
 
                             elsif(current_ins = ldr or current_ins = ldrh or current_ins = ldrb or current_ins = ldrsb or current_ins = ldrsh) then
                                 -- 'ldr' instruction goes to stage five
                                 stage <= fifth_ldr;
                                 Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
-                                Memory_Component <= result_from_ALU(1 downto 0);
                 
                             elsif(current_ins = strh) then
+                                -- 'str' instruction complete here
                                 stage <= common_first;
+                                -- Instruction complete, set flow to done
                                 flow <= done;
-                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 0) && "00"));
-
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
+                                if(result_from_ALU(1 downto 0) = "00") then
+                                    -- Write Enable (The first two bytes)
+                                    Write_Enable_0 <= '1';
+                                    Write_Enable_1 <= '1';
+                                    -- Send data to 
+                                    Data_To_DM_0 <= RF(to_integer(unsigned(RD)))(7 downto 0);
+                                    Data_To_DM_1 <= RF(to_integer(unsigned(RD)))(15 downto 8);
+                                else if (result_from_ALU(1 downto 0) = "10")  then
+                                    -- Write Enable (The first two bytes)
+                                    Write_Enable_3 <= '1';
+                                    Write_Enable_2 <= '1';
+                                    -- Send data to 
+                                    Data_To_DM_2 <= RF(to_integer(unsigned(RD)))(7 downto 0);
+                                    Data_To_DM_3 <= RF(to_integer(unsigned(RD)))(15 downto 8);
+                                end if;
                             elsif(current_ins = strb) then
+                                -- 'str' instruction complete here
                                 stage <= common_first;
+                                -- Instruction complete, set flow to done
                                 flow <= done;
-                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 0) && "00"));
+                                if(result_from_ALU(1 downto 0) = "00") then
+                                    Write_Enable_0 <= '1';
+                                    Data_To_DM_0 <= RF(to_integer(unsigned(RD)))(7 downto 0);
+                                else if(result_from_ALU(1 downto 0) = "01") then
+                                    Write_Enable_1 <= '1';
+                                    Data_To_DM_1 <= RF(to_integer(unsigned(RD)))(7 downto 0);
+                                else if(result_from_ALU(1 downto 0) = "10") then
+                                    Write_Enable_2 <= '1';
+                                    Data_To_DM_2 <= RF(to_integer(unsigned(RD)))(7 downto 0);
+                                else if(result_from_ALU(1 downto 0) = "11") then
+                                    Write_Enable_3 <= '1';
+                                    Data_To_DM_3 <= RF(to_integer(unsigned(RD)))(7 downto 0);
+                                end if;
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
                                 
                             end if;
     

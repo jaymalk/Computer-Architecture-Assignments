@@ -189,12 +189,12 @@ begin
     -- Concurrent assignement of DM_Address(8 bit vector), from Address_To_DM (integer)
     DM_Address <= std_logic_vector(to_unsigned(Address_To_DM, 8));
     
-    Data_To_DM_0 <= Data_To_DM(31 downto 24);
-    Data_To_DM_1 <= Data_To_DM(23 downto 16);
-    Data_To_DM_2 <= Data_To_DM(15 downto 8);
-    Data_To_DM_3 <= Data_To_DM(7 downto 0);
+    Data_To_DM_3 <= Data_To_DM(31 downto 24);
+    Data_To_DM_2 <= Data_To_DM(23 downto 16);
+    Data_To_DM_1 <= Data_To_DM(15 downto 8);
+    Data_To_DM_0 <= Data_To_DM(7 downto 0);
 
-    Data_From_DM <= Data_From_DM_0 & Data_From_DM_1 & Data_From_DM_2 & Data_From_DM_3 ; 
+    Data_From_DM <= Data_From_DM_3 & Data_From_DM_2 & Data_From_DM_1 & Data_From_DM_0 ; 
     -- Data Memory Components
     DM_0 : DataMemory
     port map (
