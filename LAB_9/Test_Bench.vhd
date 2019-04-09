@@ -37,11 +37,13 @@ architecture Behavioral of TestBench is
     signal slow_clock : std_logic;
 
     -- Write enable (For data memory)
-    signal Write_Enable : std_logic;
+    signal Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3 : std_logic;
 
     -- CPU signals (for mapping)
     signal Address_To_IM, Address_To_DM : integer;
     signal Instruction_From_IM, Data_To_DM, Data_From_DM : std_logic_vector(31 downto 0);
+    signal Data_To_DM_0, Data_To_DM_1, Data_To_DM_2, Data_To_DM_3: std_logic_vector(7 downto 0);
+    signal Data_From_DM_0, Data_From_DM_1, Data_From_DM_2, Data_From_DM_3: std_logic_vector(7 downto 0);
 
     -- Address to program and data memory
     signal DM_Address, IM_Address : std_logic_vector(7 downto 0);
@@ -93,7 +95,7 @@ architecture Behavioral of TestBench is
                     -- Data to be sent to data memory, used be str
                 Data_To_DM: out std_logic_vector(31 downto 0);
                     -- Deciding for write and fetch from data memory
-                Write_Enable: out std_logic;
+                Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3: out std_logic;
                     -- dummy RF to be used outside
                 RF_For_Display: out register_file_datatype
               );
@@ -175,7 +177,10 @@ begin
             -- Data to DM
             Data_To_DM => Data_To_DM,
             -- Write enable for DM
-            Write_Enable => Write_Enable,
+            Write_Enable_0 => Write_Enable_0,
+            Write_Enable_1 => Write_Enable_1,
+            Write_Enable_2 => Write_Enable_2,
+            Write_Enable_3 => Write_Enable_3,
             -- Dummy RF for display
             RF_For_Display => RF_For_Display
         );
@@ -183,17 +188,49 @@ begin
 ------------------------------------------------------------
     -- Concurrent assignement of DM_Address(8 bit vector), from Address_To_DM (integer)
     DM_Address <= std_logic_vector(to_unsigned(Address_To_DM, 8));
+    
+    Data_To_DM_0 <= Data_To_DM(31 downto 24);
+    Data_To_DM_1 <= Data_To_DM(23 downto 16);
+    Data_To_DM_2 <= Data_To_DM(15 downto 8);
+    Data_To_DM_3 <= Data_To_DM(7 downto 0);
 
-    -- Data Memory Component
-    DM : DataMemory
+    Data_From_DM <= Data_From_DM_0 & Data_From_DM_1 & Data_From_DM_2 & Data_From_DM_3 ; 
+    -- Data Memory Components
+    DM_0 : DataMemory
     port map (
         a => DM_Address,
-        d => Data_To_DM,
+        d => Data_To_DM_0,
         clk => test_clock,
-        we => Write_Enable,
-        spo => Data_From_DM
+        we => Write_Enable_0,
+        spo => Data_From_DM_0
     );
 
+    DM_1 : DataMemory
+    port map (
+        a => DM_Address,
+        d => Data_To_DM_1,
+        clk => test_clock,
+        we => Write_Enable_1,
+        spo => Data_From_DM_1
+    );
+
+    DM_2 : DataMemory
+    port map (
+        a => DM_Address,
+        d => Data_To_DM_2,
+        clk => test_clock,
+        we => Write_Enable_2,
+        spo => Data_From_DM_2
+    );
+
+    DM_3 : DataMemory
+    port map (
+        a => DM_Address,
+        d => Data_To_DM_3,
+        clk => test_clock,
+        we => Write_Enable_3,
+        spo => Data_From_DM_3
+    );
 ------------------------------------------------------------ 
 
 end Behavioral ;

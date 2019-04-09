@@ -25,7 +25,7 @@ entity CPU_MULTI is
                 -- Data to be sent to data memory, used be str
             Data_To_DM: out std_logic_vector(31 downto 0);
                 -- Deciding for write and fetch from data memory
-            Write_Enable: out std_logic;
+            Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3: out std_logic;
                 -- dummy RF to be used outside
             RF_For_Display: out register_file_datatype
           );
@@ -91,6 +91,10 @@ architecture Behavioral of CPU_MULTI is
     type stage_type is (common_first, common_second, shift_stage, third, fourth, fifth_ldr);
     signal stage : stage_type := common_first ;
 
+    -- Data in and out from Memory
+    signal Data_To_DM_0, Data_To_DM_1, Data_To_DM_2, Data_To_DM_3: std_logic_vector(7 downto 0);
+    signal Data_From_DM_0, Data_From_DM_1, Data_From_DM_2, Data_From_DM_3: std_logic_vector(7 downto 0);
+
     -- Decoder module
     -- component decoder
     --   Port (
@@ -111,7 +115,7 @@ architecture Behavioral of CPU_MULTI is
             instruction : in std_logic_vector(31 downto 0);
             -- Output parameter
             command : out instruction_type;
-            command_class : out instruction_class
+            command_class_out : out instruction_class
            );
     end component;
 
@@ -167,7 +171,7 @@ begin
     Load_Store <= instruction(20);
 
     -- Write enable with concurrent assignment from Load_Store
-    Write_Enable <= not Load_Store;
+    -- Write_Enable <= not Load_Store;
 
     -- RN and RD (register address)
     RN <= instruction(19 downto 16);
@@ -206,7 +210,7 @@ begin
             instruction => instruction,
             -- Output parameter
             command => current_ins,
-            command_class => class
+            command_class_out => class
         );
 
     -- Providing the value to the last operand, without shift (Depending on the situation) --
@@ -222,9 +226,9 @@ begin
                 -- Offset is complete and subtracted
                 "111111111111111111111111" & instruction(11 downto 8) & instruction(3 downto 0) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '0') else
                 -- Offset is register based and added
-                RF(to_integer(unsigned(instruction(3 downto 0)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '1')
+                RF(to_integer(unsigned(instruction(3 downto 0)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '1') else
                 -- Offset is register based and subtracted (review below)
-                NOT RF(to_integer(unsigned(instruction(3 downto 0)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '0')
+                NOT RF(to_integer(unsigned(instruction(3 downto 0)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '0') else
             -- DT instruction (original)
                 -- Offset is complete and added
                 "00000000000000000000" & instruction(11 downto 0) when (F_Class = "01" and Up_Down='1' and Immediate = '0') else
@@ -293,6 +297,13 @@ begin
     Address_To_IM <= PC;
     RF_For_Display <= RF;
 
+    --
+    Data_From_DM_0 <= Data_From_DM(31 downto 24);
+    Data_From_DM_1 <= Data_From_DM(23 downto 16);
+    Data_From_DM_2 <= Data_From_DM(15 downto 8);
+    Data_From_DM_3 <= Data_From_DM(7 downto 0);
+
+    Data_To_DM <= Data_To_DM_0 & Data_To_DM_1 & Data_To_DM_2 & Data_To_DM_3 ; 
 
     -- BOTH FMS'S FOR STAGE && FLOW_COMMAND
         -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
@@ -322,6 +333,11 @@ begin
                             instruction <= Instruction_From_IM;
                             -- Go to next stage
                             stage <= common_second;
+                            -- Disabling Write_Enable
+                            Write_Enable_0 <= '0';
+                            Write_Enable_1 <= '0';
+                            Write_Enable_2 <= '0';
+                            Write_Enable_3 <= '0';
                         end if;
     
                     -- Second stage (Common in all)
@@ -431,8 +447,17 @@ begin
                                 stage <= common_first;
                                 -- Instruction complete, set flow to done
                                 flow <= done;
+                                -- Enabling Write_Back in Data Memory
+                                Write_Enable_0 <= '1';
+                                Write_Enable_1 <= '1';
+                                Write_Enable_2 <= '1';
+                                Write_Enable_3 <= '1';
                                 -- 'str' related operations
-                                Data_To_DM <= RF(to_integer(unsigned(RD)));
+                                --Data_To_DM <= RF(to_integer(unsigned(RD)));
+                                Data_To_DM_0 <= RF(to_integer(unsigned(RD)))(31 downto 24);
+                                Data_To_DM_1 <= RF(to_integer(unsigned(RD)))(23 downto 16);
+                                Data_To_DM_2 <= RF(to_integer(unsigned(RD)))(15 downto 8);
+                                Data_To_DM_3 <= RF(to_integer(unsigned(RD)))(7 downto 0);
                                 Address_To_DM <= to_integer(unsigned(result_from_ALU));
     
                             elsif(current_ins = ldr) then

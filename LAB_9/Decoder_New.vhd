@@ -15,7 +15,7 @@ entity Decoder_New is
         instruction : in std_logic_vector(31 downto 0);
         -- Output parameter
         command : out instruction_type;
-        command_class : out instruction_class
+        command_class_out : out instruction_class
        );
 end Decoder_New;
 
@@ -34,7 +34,7 @@ architecture architecture_decoder of Decoder_New is
     -- Signal separation for special class (DT F = "00")
     signal INR, R : std_logic;
     signal SH : std_logic_vector(1 downto 0);
-
+    signal command_class: instruction_class;
 begin
 
 -- Assigning the general parameters their value
@@ -58,6 +58,8 @@ begin
 
 -- Main Decoding Part
 
+    command_class_out <= command_class;
+    
     command_class <= 
                 -- DP
                 DP when (class = "00" and (I='1' or (I='0' and (INR='0' or (INR='1' and R='0'))))) else
@@ -93,10 +95,10 @@ begin
                 ldrsb when (cond = "1110" and SH = "10" and L = '1' and (B = '0' or (B = '1' and instruction(11 downto 8))) and command_class = DT) else
                 strsb when (cond = "1110" and SH = "10" and L = '0' and (B = '0' or (B = '1' and instruction(11 downto 8))) and command_class = DT) else
                 -- DT (Class = "01")
-                ldr  when (cond = "1110" and L = '1' and B = '0')
-                str  when (cond = "1110" and L = '0' and B = '0')
-                ldrb when (cond = "1110" and L = '1' and B = '1')
-                strb when (cond = "1110" and L = '0' and B = '1')
+                ldr  when (cond = "1110" and L = '1' and B = '0') else
+                str  when (cond = "1110" and L = '0' and B = '0') else
+                ldrb when (cond = "1110" and L = '1' and B = '1') else
+                strb when (cond = "1110" and L = '0' and B = '1') else
                 -- Branching
                 beq when (cond = "0000" and command_class = branch) else
                 bne when (cond = "0001" and command_class = branch) else
