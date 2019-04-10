@@ -93,10 +93,10 @@ begin
                 strh  when (cond = "1110" and SH = "01" and L = '0' and (B = '0' or (B = '1' and instruction(11 downto 8) = "0000")) and command_class = DT) else
                 ldrsb when (cond = "1110" and SH = "10" and L = '1' and (B = '0' or (B = '1' and instruction(11 downto 8) = "0000")) and command_class = DT) else
                 -- DT (Class = "01")
-                ldr  when (cond = "1110" and L = '1' and B = '0') else
-                str  when (cond = "1110" and L = '0' and B = '0') else
-                ldrb when (cond = "1110" and L = '1' and B = '1') else
-                strb when (cond = "1110" and L = '0' and B = '1') else
+                ldr  when (cond = "1110" and L = '1' and B = '0' and command_class = DT) else
+                str  when (cond = "1110" and L = '0' and B = '0' and command_class = DT) else
+                ldrb when (cond = "1110" and L = '1' and B = '1' and command_class = DT) else
+                strb when (cond = "1110" and L = '0' and B = '1' and command_class = DT) else
                 -- Branching
                 beq when (cond = "0000" and command_class = branch) else
                 bne when (cond = "0001" and command_class = branch) else

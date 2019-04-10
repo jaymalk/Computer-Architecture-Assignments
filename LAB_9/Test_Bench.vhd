@@ -58,10 +58,10 @@ architecture Behavioral of TestBench is
     component DataMemory
       port (
         a : in STD_LOGIC_VECTOR(7 downto 0);
-        d : in STD_LOGIC_VECTOR(31 downto 0);
+        d : in STD_LOGIC_VECTOR(7 downto 0);
         clk : in STD_LOGIC;
         we : in STD_LOGIC;
-        spo : out STD_LOGIC_VECTOR(31 downto 0)
+        spo : out STD_LOGIC_VECTOR(7 downto 0)
       );
     end component;
     

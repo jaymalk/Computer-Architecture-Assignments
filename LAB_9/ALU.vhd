@@ -99,10 +99,10 @@ architecture Behavioral of ALU is
                     temp_result <= A_ALU XOR B_ALU;
                     
                 -- DT instructions
-                elsif (input_instruction = str or input_instruction = ldr or inpu) then
+                elsif (input_instruction = unknown) then
                     -- Returning address value as
-                    temp_result <= std_logic_vector(signed(A_ALU) + signed(B_ALU));
                 else
+                    temp_result <= std_logic_vector(signed(A_ALU) + signed(B_ALU));
                     -- Should not be reached.
                 end if;
             end if;

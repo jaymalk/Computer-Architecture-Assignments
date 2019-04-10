@@ -1,0 +1,4 @@
+Lab-8 was completed last week. This week we have submitted it's bit file also. There are 8 different codes loaded into program memory of lab8
+
+This week we have mainlyworked on lab 9. It is almost completed, we have synthesized the code and now we are doing extensive simulation to catch any errors.
+Data memory was divided into 4 8bit wide memory. DT instruction subset has been increased. Flag is getting updated correctly.

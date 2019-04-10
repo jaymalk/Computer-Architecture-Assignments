@@ -434,7 +434,12 @@ begin
                                         end if;
                                     end if;
                                 end if;
-    
+                            
+                            elsif((current_ins = ldr) or (current_ins = ldrh) or (current_ins = ldrb) or (current_ins = ldrsb) or (current_ins = ldrsh)) then
+                                -- 'ldr' instruction goes to stage five
+                                stage <= fifth_ldr;
+                                Address_To_DM <= to_integer(unsigned((result_from_ALU(31 downto 2))))*4;
+                    
                             elsif(current_ins = str) then
                                 -- 'str' instruction complete here
                                 stage <= common_first;
@@ -451,19 +456,14 @@ begin
                                 Data_To_DM_2 <= RF(to_integer(unsigned(RD)))(23 downto 16);
                                 Data_To_DM_1 <= RF(to_integer(unsigned(RD)))(15 downto 8);
                                 Data_To_DM_0 <= RF(to_integer(unsigned(RD)))(7 downto 0);
-                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2)))*4;
 
-                            elsif(current_ins = ldr or current_ins = ldrh or current_ins = ldrb or current_ins = ldrsb or current_ins = ldrsh) then
-                                -- 'ldr' instruction goes to stage five
-                                stage <= fifth_ldr;
-                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
-                
                             elsif(current_ins = strh) then
                                 -- 'str' instruction complete here
                                 stage <= common_first;
                                 -- Instruction complete, set flow to done
                                 flow <= done;
-                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2)))*4;
                                 if(result_from_ALU(1 downto 0) = "00") then
                                     -- Write Enable (The first two bytes)
                                     Write_Enable_0 <= '1';
@@ -471,7 +471,7 @@ begin
                                     -- Send data to 
                                     Data_To_DM_0 <= RF(to_integer(unsigned(RD)))(7 downto 0);
                                     Data_To_DM_1 <= RF(to_integer(unsigned(RD)))(15 downto 8);
-                                else if (result_from_ALU(1 downto 0) = "10")  then
+                                elsif (result_from_ALU(1 downto 0) = "10")  then
                                     -- Write Enable (The first two bytes)
                                     Write_Enable_3 <= '1';
                                     Write_Enable_2 <= '1';
@@ -488,17 +488,17 @@ begin
                                 if(result_from_ALU(1 downto 0) = "00") then
                                     Write_Enable_0 <= '1';
                                     Data_To_DM_0 <= RF(to_integer(unsigned(RD)))(7 downto 0);
-                                else if(result_from_ALU(1 downto 0) = "01") then
+                                elsif(result_from_ALU(1 downto 0) = "01") then
                                     Write_Enable_1 <= '1';
                                     Data_To_DM_1 <= RF(to_integer(unsigned(RD)))(7 downto 0);
-                                else if(result_from_ALU(1 downto 0) = "10") then
+                                elsif(result_from_ALU(1 downto 0) = "10") then
                                     Write_Enable_2 <= '1';
                                     Data_To_DM_2 <= RF(to_integer(unsigned(RD)))(7 downto 0);
-                                else if(result_from_ALU(1 downto 0) = "11") then
+                                elsif(result_from_ALU(1 downto 0) = "11") then
                                     Write_Enable_3 <= '1';
                                     Data_To_DM_3 <= RF(to_integer(unsigned(RD)))(7 downto 0);
                                 end if;
-                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2) && "00"));
+                                Address_To_DM <= to_integer(unsigned(result_from_ALU(31 downto 2)))*4;
 
                             end if;
     
@@ -513,43 +513,61 @@ begin
                         elsif(current_ins = ldrh) then
                             if(result_from_ALU(1 downto 0) = "00") then
                                 RF(to_integer(unsigned(RD))) <= "0000000000000000" & Data_From_DM_1 & Data_From_DM_0;
-                            else if (result_from_ALU(1 downto 0) = "10")  then
+                            elsif (result_from_ALU(1 downto 0) = "10")  then
                                 RF(to_integer(unsigned(RD))) <= "0000000000000000" & Data_From_DM_3 & Data_From_DM_2;
                             end if;
 
                         elsif(current_ins = ldrb) then
                             if(result_from_ALU(1 downto 0) = "00") then
                                 RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_0;
-                            else if (result_from_ALU(1 downto 0) = "01")  then
+                            elsif (result_from_ALU(1 downto 0) = "01")  then
                                 RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_1;
-                            if(result_from_ALU(1 downto 0) = "10") then
+                            elsif(result_from_ALU(1 downto 0) = "10") then
                                 RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_2;
-                            else if (result_from_ALU(1 downto 0) = "11")  then
+                            elsif (result_from_ALU(1 downto 0) = "11")  then
                                 RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_3;
                             end if;
                         
                         elsif(current_ins = ldrsh) then
                             if(result_from_ALU(1 downto 0) = "00") then
-                                RF(to_integer(unsigned(RD))) <= "0000000000000000" & Data_From_DM_1 & Data_From_DM_0 when (Data_From_DM_1(7) = '0') else
-                                                                "1111111111111111" & Data_From_DM_1 & Data_From_DM_0;
-                            else if (result_from_ALU(1 downto 0) = "10")  then
-                                RF(to_integer(unsigned(RD))) <= "0000000000000000" & Data_From_DM_3 & Data_From_DM_2 when (Data_From_DM_3(7) = '0') else
-                                                                "1111111111111111" & Data_From_DM_3 & Data_From_DM_2;
+                                if(Data_From_DM_1(7) = '0') then
+                                    RF(to_integer(unsigned(RD))) <= ("0000000000000000" & Data_From_DM_1 & Data_From_DM_0);
+                                else
+                                    RF(to_integer(unsigned(RD))) <= ("1111111111111111" & Data_From_DM_1 & Data_From_DM_0);
+                                end if;
+                            elsif(result_from_ALU(1 downto 0) = "10")  then
+                                if(Data_From_DM_3(7) = '0') then
+                                    RF(to_integer(unsigned(RD))) <= ("0000000000000000" & Data_From_DM_3 & Data_From_DM_2);
+                                else
+                                    RF(to_integer(unsigned(RD))) <= ("1111111111111111" & Data_From_DM_3 & Data_From_DM_2);
+                                end if;
                             end if;
 
                         elsif(current_ins = ldrsb) then
                             if(result_from_ALU(1 downto 0) = "00") then
-                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_0 when (Data_From_DM_0(7) = '0') else
-                                                                "111111111111111111111111" & Data_From_DM_0;
-                            else if (result_from_ALU(1 downto 0) = "01")  then
-                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_1 when (Data_From_DM_1(7) = '0') else
-                                                                "111111111111111111111111" & Data_From_DM_1;
-                            if(result_from_ALU(1 downto 0) = "10") then
-                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_2 when (Data_From_DM_2(7) = '0') else
-                                                                "111111111111111111111111" & Data_From_DM_2;
-                            else if (result_from_ALU(1 downto 0) = "11")  then
-                                RF(to_integer(unsigned(RD))) <= "000000000000000000000000" & Data_From_DM_3 when (Data_From_DM_3(7) = '0') else
-                                                                "111111111111111111111111" & Data_From_DM_3;
+                                if(Data_From_DM_0(7) = '0') then
+                                    RF(to_integer(unsigned(RD))) <= ("000000000000000000000000" & Data_From_DM_0);
+                                else
+                                    RF(to_integer(unsigned(RD))) <= ("111111111111111111111111" & Data_From_DM_0);
+                                end if;
+                            elsif (result_from_ALU(1 downto 0) = "01")  then
+                                if(Data_From_DM_1(7) = '0') then
+                                    RF(to_integer(unsigned(RD))) <= ("000000000000000000000000" & Data_From_DM_1);
+                                else
+                                    RF(to_integer(unsigned(RD))) <= ("111111111111111111111111" & Data_From_DM_1);
+                                end if;
+                            elsif(result_from_ALU(1 downto 0) = "10") then
+                                if(Data_From_DM_2(7) = '0') then
+                                    RF(to_integer(unsigned(RD))) <= ("000000000000000000000000" & Data_From_DM_2);
+                                else
+                                    RF(to_integer(unsigned(RD))) <= ("111111111111111111111111" & Data_From_DM_2);
+                                end if;
+                            elsif (result_from_ALU(1 downto 0) = "11")  then
+                                if(Data_From_DM_3(7) = '0') then
+                                    RF(to_integer(unsigned(RD))) <= ("000000000000000000000000" & Data_From_DM_3);
+                                else
+                                    RF(to_integer(unsigned(RD))) <= ("111111111111111111111111" & Data_From_DM_3);
+                                end if;
                             end if;
 
                         end if;
@@ -557,9 +575,9 @@ begin
                         flow <= done;
                         -- 'ldr' instruction complete here
                         stage <= common_first;
-    
-                    when others =>
-                        -- Should not be reached
+                   
+                   when others => 
+                            -- Should not be reached
                 end case;
     ------------------------------------------
     --  FLOW FSM
