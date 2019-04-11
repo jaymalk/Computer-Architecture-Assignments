@@ -62,7 +62,7 @@ begin
 
     command_class <= 
                 -- MUL
-                MUL when (instruction(27 downto 24) = "0000" and instruction(7 downto 4) = "1001") else
+                MUL when (instruction(31 downto 24) = "11100000" and instruction(7 downto 4) = "1001") else
                 -- DP
                 DP when (class = "00" and (I='1' or (I='0' and (INR='0' or (INR='1' and R='0'))))) else
                 -- DT
@@ -73,12 +73,12 @@ begin
                 unknown;
 
     command <=  -- MUL
-                mul when (cond = "1110" and instruction(27 downto 22) = "000000" and instruction(7 downto 4) = "1001" and instruction(21) = '0') else
-                mla when (cond = "1110" and instruction(27 downto 22) = "000000" and instruction(7 downto 4) = "1001" and instruction(21) = '1') else
-              umull when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "10") else
-              umlal when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "11") else
-              smull when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "00") else
-              smlal when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "01") else
+                mul when (cond = "1110" and instruction(27 downto 22) = "000000" and instruction(7 downto 4) = "1001" and instruction(21) = '0' and command_class = MUL) else
+                mla when (cond = "1110" and instruction(27 downto 22) = "000000" and instruction(7 downto 4) = "1001" and instruction(21) = '1' and command_class = MUL) else
+              umull when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "10" and command_class = MUL) else
+              umlal when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "11" and command_class = MUL) else
+              smull when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "00" and command_class = MUL) else
+              smlal when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "01" and command_class = MUL) else
                 -- DP
            not_nand when (cond = "1110" and opcode = "0000" and command_class = DP) else
                 eor when (cond = "1110" and opcode = "0001" and command_class = DP) else
