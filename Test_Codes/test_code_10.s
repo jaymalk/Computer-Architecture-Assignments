@@ -7,6 +7,6 @@ umull r6,r7,r0,r3
 smlal r4,r5,r0,r3
 umlal r6,r7,r0,r3
 
-@ Lab 10 main.coe code -010
+@ Lab 10 main.coe code -001
 @ E3A0000F,E0010090,E0221090,E1A03E00,
 @ E0C54390,E0876390,E0E54390,E0A76390,

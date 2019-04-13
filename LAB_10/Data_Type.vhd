@@ -18,7 +18,7 @@ package data_type is
         -- DP
         not_nand, eor, sub, rsb, add, adc, sbc, rsc, tst, teq, cmp, cmn, orr, mov, bic, mvn,
         -- MUL
-        mul, mla, smull, smlal, umull, umlal
+        mul, mla, smull, smlal, umull, umlal,
         -- DT
         ldr, str, ldrh, strh, ldrb, strb, ldrsh, ldrsb,
         -- Branching
