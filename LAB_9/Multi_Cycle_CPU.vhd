@@ -58,7 +58,7 @@ architecture Behavioral of CPU_MULTI is
     signal call_ldr : std_logic := '0';
 
     -- Signal for current and destination registers
-    signal RD, RN, RS, RM: std_logic_vector(3 downto 0);
+    signal RD, RN: std_logic_vector(3 downto 0);
 
     -- Value associated with the third operand (RM or llM)
     signal RM_val, shift_val: std_logic_vector(31 downto 0);
@@ -140,23 +140,6 @@ architecture Behavioral of CPU_MULTI is
     signal ALU_ON : std_logic := '0';
     signal result_from_ALU : std_logic_vector(31 downto 0);
 
-    component Multiplier is
-        Port (
-                -- Input Parameters
-                work: in std_logic;    -- Logic for allowing use
-                Rd_multiplier, Rn_multiplier, Rs_multiplier, Rm_multiplier : in std_logic_vector(31 downto 0); -- Input Values
-                input_instruction : in instruction_type; -- Instruction to follow
-    
-                -- Output Parameters
-                Result_Hi, Result_Lo : out std_logic_vector(31 downto 0) -- Results of Multiplier calculation
-              );
-    end component;
-
-    -- Signal for handeling working and result from ALU
-    signal MULTIPLIER_ON : std_logic := '0';
-    signal C,D: std_logic_vector(31 downto 0); --input to multiplier
-    signal result_hi_from_multiplier, result_lo_from_multiplier: std_logic_vector(31 downto 0);
-
 begin
 
     -- Concurrent assignment of the signals from positions in the instruction (preserved one) --
@@ -179,8 +162,6 @@ begin
     -- RN and RD (register address)
     RN <= instruction(19 downto 16);
     RD <= instruction(15 downto 12);
-    RS <= instruction(11 downto 8);
-    RM <= instruction(3 downto 0);
     -- Shift specification and opcodes
     Shift <= instruction(11 downto 4);
     Opcode <= instruction(24 downto 21);
@@ -280,21 +261,6 @@ begin
             C_bit => C_Shift
         );
 
-    Multiplier_ref : Multiplier
-        Port Map(
-            -- Input Parameters
-            work => MULTIPLIER_ON,    -- Logic for allowing use
-            Rd_multiplier => A,
-            Rn_multiplier => B,
-            Rs_multiplier => C,
-            Rm_multiplier => D,
-            input_instruction => current_ins, -- Instruction to follow
-    
-            -- Output Parameters
-            Result_Hi => result_hi_from_multiplier,
-            Result_Lo => result_lo_from_multiplier -- Results of Multiplier calculation
-        );
-
     -- Linking signals with OUTPUT values.
     Address_To_IM <= PC;
     RF_For_Display <= RF;
@@ -332,6 +298,7 @@ begin
                             if(not(instruction="00000000000000000000000000000000"))then
                                 -- Increment PC
                                 PC <= PC+1;
+                            end if;
                                 -- Store instruction
                                 instruction <= Instruction_From_IM;
                                 -- Go to next stage
@@ -341,7 +308,7 @@ begin
                                 Write_Enable_1 <= '0';
                                 Write_Enable_2 <= '0';
                                 Write_Enable_3 <= '0';
-                            end if;
+                            
                         end if;
     
                     -- Second stage (Common in all)
@@ -382,13 +349,6 @@ begin
                                     stage <= fourth;
                                     -- Get result from ALU (in next cycle)
                                     ALU_ON <= '1';
-                            
-                            elsif(class = MUL)then
-                                B <= RF(to_integer(unsigned(RD)));
-                                C <= RF(to_integer(unsigned(RS)));
-                                D <= RF(to_integer(unsigned(RM)));
-                                MULTIPLIER_ON <= '1';
-                                stage <= fourth;
 
                             -- Branch instructions
                             elsif(class = branch) then
@@ -417,7 +377,6 @@ begin
                         if(flow = onestep or flow = oneinstr or flow = cont) then
                             -- Turn off the ALU
                             ALU_ON <= '0';
-                            MULTIPLIER_ON <= '0';
 
                             if(class = DP) then
                                 -- DP instructions complete here
@@ -443,17 +402,6 @@ begin
                                             Carry_Flag <= C_Shift;
                                         end if;
                                     end if;
-                                end if;
-                            
-                            elsif(class = MUL) then
-                                stage <= common_first;
-                                flow <= done;
-
-                                if(current_ins = mul or current_ins = mla) then
-                                    RF(to_integer(unsigned(RN))) <= result_lo_from_multiplier;
-                                elsif(current_ins = smull or current_ins = smlal or current_ins = umull or current_ins = umlal) then
-                                    RF(to_integer(unsigned(RN))) <= result_hi_from_multiplier;
-                                    RF(to_integer(unsigned(RD))) <= result_lo_from_multiplier;
                                 end if;
                                 
                             elsif(class = DT)then
@@ -626,7 +574,9 @@ begin
                                         flow <= cont;
                                     end if;
                 
-                    when oneinstr => NULL;
+                    when oneinstr => if(reset='1') then
+                                        flow<= initial;
+                                     end if;
                 
                     when onestep => flow<=done;
                 
