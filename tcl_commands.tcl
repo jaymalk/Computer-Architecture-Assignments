@@ -1,7 +1,7 @@
 # TCL commands for simulation on vivado
 
 # Setting clock (10ns - 5ns)
-add_force {/TestBench/test_clock} -radix hex {0 0ns} {1 5000ps} -repeat_every 10000ps
+add_force {/TestBench/test_clock} -radix hex {1 0ns} {0 5000ps} -repeat_every 10000ps
 
 # Setting go command
 add_force {/TestBench/go} -radix bin {0 0ns}
@@ -31,7 +31,7 @@ run 10ns
 
 # Program Select
 # Enter the program no. in place
-add_force {/TestBench/Program_Select} -radix bin {111 0ns}
+add_force {/TestBench/Program_Select} -radix bin {001 0ns}
 add_force {/TestBench/reset} -radix bin {1 10ns}
 run 20ns
 add_force {/TestBench/reset} -radix bin {0 50ns}

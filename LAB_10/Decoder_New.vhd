@@ -75,10 +75,10 @@ begin
     command <=  -- MUL
                 mul when (cond = "1110" and instruction(27 downto 22) = "000000" and instruction(7 downto 4) = "1001" and instruction(21) = '0' and command_class = MUL) else
                 mla when (cond = "1110" and instruction(27 downto 22) = "000000" and instruction(7 downto 4) = "1001" and instruction(21) = '1' and command_class = MUL) else
-              umull when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "10" and command_class = MUL) else
-              umlal when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "11" and command_class = MUL) else
-              smull when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "00" and command_class = MUL) else
-              smlal when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "01" and command_class = MUL) else
+              umull when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "00" and command_class = MUL) else
+              umlal when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "01" and command_class = MUL) else
+              smull when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "10" and command_class = MUL) else
+              smlal when (cond = "1110" and instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "11" and command_class = MUL) else
                 -- DP
            not_nand when (cond = "1110" and opcode = "0000" and command_class = DP) else
                 eor when (cond = "1110" and opcode = "0001" and command_class = DP) else
