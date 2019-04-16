@@ -17,22 +17,16 @@ entity Multiplier is
 end Multiplier;
 
 architecture Behavioral of Multiplier is
-    signal result_signed: signed(63 downto 0);
-    signal result_unsigned: unsigned(63 downto 0);
+    signal temp_s, result_signed: signed(63 downto 0);
+    signal temp_u, result_unsigned: unsigned(63 downto 0);
     signal result, temp_rd: std_logic_vector(63 downto 0);
+    signal acc : std_logic := '0';
+    
     begin 
     
-    result <= std_logic_vector(result_unsigned) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
-              std_logic_vector(result_signed)   when (input_instruction=smull or input_instruction=smlal);
-    
-    Result_Hi <= result(63 downto 32);
-    Result_Lo <= result(31 downto 0);
-
-    temp_rd <= Rd_multiplier & Rn_multiplier; 
-    
-    process(work)
+    process(work, acc)
     begin
-        if(work='1')then
+        if(work='1' and work'event)then
             
             if(input_instruction=mul)then
                 result_unsigned <= unsigned(Rs_multiplier) * unsigned(Rm_multiplier);
@@ -41,13 +35,32 @@ architecture Behavioral of Multiplier is
             elsif(input_instruction=umull)then
                 result_unsigned <= unsigned(Rs_multiplier) * unsigned(Rm_multiplier);
             elsif(input_instruction=umlal)then
-                result_unsigned <= (unsigned(Rs_multiplier) * unsigned(Rm_multiplier)) + unsigned(temp_rd);
+                temp_u <= (unsigned(Rs_multiplier) * unsigned(Rm_multiplier));
+                acc <= '1';
             elsif(input_instruction=smull)then
                 result_signed <= signed(Rs_multiplier) * signed(Rm_multiplier);
             elsif(input_instruction=smlal)then
-                result_signed <= (signed(Rs_multiplier) * signed(Rm_multiplier)) + signed(temp_rd);
+                temp_s <= ( signed(Rs_multiplier) * signed(Rm_multiplier));
+                acc <= '1';
             end if;
-
+        end if;
+        
+        if(acc = '1' and acc'event) then
+            if(input_instruction=umlal)then
+                 result_unsigned <= unsigned(temp_u) + unsigned(temp_rd);
+            elsif(input_instruction=smlal)then
+                 result_signed <= signed(temp_s) + signed(temp_rd);
+            end if;             
+            acc <= '0';
         end if;
     end process;
+    
+        result <= std_logic_vector(result_unsigned) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
+                  std_logic_vector(result_signed)   when (input_instruction=smull or input_instruction=smlal);
+        
+        Result_Hi <= result(63 downto 32);
+        Result_Lo <= result(31 downto 0);
+    
+        temp_rd <= Rd_multiplier & Rn_multiplier; 
+        
 end Behavioral;
