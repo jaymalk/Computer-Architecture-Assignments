@@ -32,9 +32,9 @@ begin
                     (C = '1' and Z = '0') when (condition = "1000") else
                     (C = '0' and Z = '1') when (condition = "1001") else
                     (N = V) when (condition = "1010") else
-                    (N!= V) when (condition = "1011") else
+                    (not (N = V)) when (condition = "1011") else
                     (Z = '0' and N = V) when (condition = "1100") else
-                    (Z = '1' and N!= V) when (condition = "1101") else
+                    (Z = '1' and not (N = V)) when (condition = "1101") else
                     true when (condition = "1110") else
                     -- Unknown Condition Field
                     true;

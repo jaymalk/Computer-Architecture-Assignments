@@ -21,8 +21,8 @@ package data_type is
         mul, mla, smull, smlal, umull, umlal,
         -- DT
         ldr, str, ldrh, strh, ldrb, strb, ldrsh, ldrsb,
-        -- Branching
-        beq, bne, bal,
+        -- A unified branching instruction, since predication is handeled irrespective of (decoded type)
+        bal, bl,
         -- For error and default
         unknown
     );

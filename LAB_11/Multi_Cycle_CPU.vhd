@@ -334,6 +334,7 @@ begin
     );
 
     -- Linking signals with OUTPUT values.
+    PC <= to_integer(unsigned(RF(15)));
     Address_To_IM <= PC;
     RF_For_Display <= RF;
 
@@ -356,7 +357,7 @@ begin
         ------------------------------------------
         -- CPU FSM
             if(reset='1') then
-                PC <= PC_Start;
+                RF(15) <= std_logic_vector(to_unsigned(PC_Start, 32));
                 stage <= common_first;
                 flow <= initial;
     
@@ -369,7 +370,7 @@ begin
                         if(flow = onestep or flow = oneinstr or flow = cont) then
                             if(not(instruction="00000000000000000000000000000000"))then
                                 -- Increment PC
-                                PC <= PC+1;
+                                RF(15) <= std_logic_vector(to_unsigned(PC+1, 32));
                             end if;
                                 -- Store instruction
                                 instruction <= Instruction_From_IM;
@@ -394,8 +395,8 @@ begin
                             -- Go to next stage
                             if(not check) then
                                 stage <= common_first;
-                                flow <= done
-                            elsif(class = DP or ((current_ins = ldr or current_ins = str or current_ins = ldrb or current_ins = strb) and  Immediate = '1') ) then
+                                flow <= done;
+                            elsif (class = DP or ((current_ins = ldr or current_ins = str or current_ins = ldrb or current_ins = strb) and  Immediate = '1') ) then
                                 stage <= shift_stage;
                             else
                                 stage <= third;
@@ -438,15 +439,10 @@ begin
                                 flow <= done;
                                 -- Branch instructions complete here (go to common stage)
                                 stage <= common_first;
-    
-                                if(current_ins = bal) then
-                                    PC <= PC + 1 + (to_integer(signed(B))/4);
-                                elsif(current_ins = beq and Zero_Flag = '1') then
-                                    PC <= PC + 1 + (to_integer(signed(B))/4);
-                                elsif(current_ins = bne and Zero_Flag = '0') then
-                                    PC <= PC + 1 + (to_integer(signed(B))/4);
-                                end if;
-                            
+                                -- If link register is to be set then, (PC+1) is sent to R14
+                                RF(14) <= std_logic_vector(to_unsigned(PC+1, 32));
+                                -- Branch instruction executes on predicate check only
+                                RF(15) <= std_logic_vector(to_unsigned(PC + 1 + (to_integer(signed(B))/4), 32));
                             -- Class is Unknown, return to Common_first
                             else 
                                 stage <= common_first;

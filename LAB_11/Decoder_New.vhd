@@ -68,7 +68,7 @@ begin
                 -- DT
                 DT when (class = "01" or (class = "00" and I = '0' and INR = '1' and R = '1')) else
                 -- Branch
-                branch when (class = "10" and instruction(25 downto 24) = "10") else
+                branch when (class = "10" and instruction(25) = '1') else
                 -- Unknown
                 unknown;
 
@@ -107,9 +107,8 @@ begin
                 ldrb when (L = '1' and B = '1' and command_class = DT) else
                 strb when (L = '0' and B = '1' and command_class = DT) else
                 -- Branching
-                beq when (cond = "0000" and command_class = branch) else
-                bne when (cond = "0001" and command_class = branch) else
-                bal when (cond = "1110" and command_class = branch) else
+                bl when (command_class = branch and instruction(24) = '1') else                
+                bal when (command_class = branch) else
                 -- Error
                 unknown;
 
