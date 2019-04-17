@@ -1,18 +1,19 @@
-@ Finds 15th power of 2
+@ Finds Nth power of P
 @ Program : 3(011)
 .text
-    mov r1, #1              @ For storing the result
-    mov r2, #0              @ For storing the current Index
-    mov r3, #1              @ Temporary variable
-    mov r4, #15             @ Final result of power
-
-loop: 
-    cmp r2, r4
+    mov r0, #15         @ P = 15
+    mov r1, #2          @ N = 2
+    mov r2, #1          @ Answer
+loop:
+    cmp r0, #0
     beq exit
-    add r1, r3, r3
-    mov r3, r1
-    add r2, r2, #1
-    b loop
+    and r1, r0, #1
+    cmp r1, #1
+    muleq r3, r2, r1
+    mov r2, r3
+    mul r3, r1, r1
+    mov r1, r3
+    mov r0, r0, RSL #1
 
 exit:
     swi 0x11

@@ -1,20 +1,18 @@
-@ Fibonacci 10 : 55
+@ Fibbonaci (Better)
 @ Program : 2(001)
 .text
+    mov r0, #10
     mov r1, #0
     mov r2, #1
-    mov r3, #0
-    mov r4, #10
 
-loop: 
-    cmp r4, #0
-    beq exit
-    add r3, r1, r2
-    mov r1, r2
-    mov r2, r3
-    sub r4, r4, #1
-    b loop
-
+loop:
+    cmp r0, #0
+    addne r2, r1, r2
+    subne r1, r2, r1
+    moveq pc, lr
+    sub r0, r0, #1
+    bl loop
+    b exit
 exit:
     swi 0x11
     .end
