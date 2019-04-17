@@ -77,7 +77,7 @@ architecture Behavioral of CPU_MULTI is
     signal C_Shift : std_logic := '0'; -- C bit from the shifter
 
     -- Signal for keeping in check the flags
-    signal Zero_Flag, Carry_Flag, Neg_Flag, Over_Flag, Set_Flag: std_logic;
+    signal Zero_Flag, Carry_Flag, Neg_Flag, Over_Flag, Set_Flag: std_logic := '0';
 
     -- Signals for new flags from ALU
     signal Zero_Flag_ALU, Carry_Flag_ALU, Neg_Flag_ALU, Over_Flag_ALU: std_logic;
@@ -130,7 +130,9 @@ architecture Behavioral of CPU_MULTI is
                 input_instruction : in instruction_type; -- Instruction to follow
     
                 -- Output Parameters
-                Result_Hi, Result_Lo : out std_logic_vector(31 downto 0) -- Results of Multiplier calculation
+                Result_Hi, Result_Lo : out std_logic_vector(31 downto 0); -- Results of Multiplier calculation
+                Z_Flag : out std_logic; -- Zero flag
+                N_Flag : out std_logic -- Negative flag
               );
     end component;
 
@@ -138,7 +140,7 @@ architecture Behavioral of CPU_MULTI is
     signal MULTIPLIER_ON : std_logic := '0';
     signal C,D: std_logic_vector(31 downto 0); --input to multiplier
     signal result_hi_from_multiplier, result_lo_from_multiplier: std_logic_vector(31 downto 0);
-
+    signal Zero_Flag_Multiplier, Neg_Flag_Multiplier: std_logic;
     -- Shifter component from the Shifter module
     component Shifter
         Port (
@@ -293,7 +295,9 @@ begin
     
         -- Output Parameters
         Result_Hi => result_hi_from_multiplier,
-        Result_Lo => result_lo_from_multiplier -- Results of Multiplier calculation
+        Result_Lo => result_lo_from_multiplier, -- Results of Multiplier calculation
+        Z_Flag => Zero_Flag_Multiplier,
+        N_Flag => Neg_Flag_Multiplier
     );    
 
     -- Linking signals with OUTPUT values.
@@ -456,6 +460,12 @@ begin
                                 elsif(current_ins = smull or current_ins = smlal or current_ins = umull or current_ins = umlal) then
                                     RF(to_integer(unsigned(RN))) <= result_hi_from_multiplier;
                                     RF(to_integer(unsigned(RD))) <= result_lo_from_multiplier;
+                                end if;
+                                -- If set flag is on, then set the flags to flags from Multiplier
+                                if(Set_Flag = '1') then
+                                    -- Setting Z & N irrespective of type of MUL
+                                    Zero_FLag <= Zero_FLag_Multiplier;
+                                    Neg_Flag <= Neg_Flag_Multiplier;
                                 end if;
                                 
                             elsif(class = DT)then

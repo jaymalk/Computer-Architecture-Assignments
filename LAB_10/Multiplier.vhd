@@ -12,7 +12,9 @@ entity Multiplier is
             input_instruction : in instruction_type; -- Instruction to follow
 
             -- Output Parameters
-            Result_Hi, Result_Lo : out std_logic_vector(31 downto 0) -- Results of Multiplier calculation
+            Result_Hi, Result_Lo : out std_logic_vector(31 downto 0); -- Results of Multiplier calculation
+            Z_Flag : out std_logic; -- Zero flag
+            N_Flag : out std_logic -- Negative flag
           );
 end Multiplier;
 
@@ -63,4 +65,11 @@ architecture Behavioral of Multiplier is
     
         temp_rd <= Rd_multiplier & Rn_multiplier; 
         
+        N_Flag <= result(31) when (input_instruction = mul or input_instruction = mla) else
+                  result(63);
+
+        Z_Flag <= '1' when (result(31 downto 0) = "00000000000000000000000000000000" and (input_instruction = mul or input_instruction = mla)) else
+                  '1' when (result = "0000000000000000000000000000000000000000000000000000000000000000" and (input_instruction = smull or input_instruction = smlal or input_instruction = umull or input_instruction = umlal)) else
+                  '0';
+                  
 end Behavioral;
