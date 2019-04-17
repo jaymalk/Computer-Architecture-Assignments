@@ -62,7 +62,7 @@ begin
 
     command_class <= 
                 -- MUL
-                MUL when (instruction(31 downto 24) = "11100000" and instruction(7 downto 4) = "1001") else
+                MUL when (instruction(27 downto 24) = "0000" and instruction(7 downto 4) = "1001") else
                 -- DP
                 DP when (class = "00" and (I='1' or (I='0' and (INR='0' or (INR='1' and R='0'))))) else
                 -- DT
