@@ -28,8 +28,14 @@ architecture Behavioral of Multiplier is
     
     process(work, acc)
     begin
-        if(work='1' and work'event)then
-            
+        if(acc = '1') then
+                if(input_instruction=umlal)then
+                     result_unsigned <= unsigned(temp_u) + unsigned(temp_rd);
+                elsif(input_instruction=smlal)then
+                     result_signed <= signed(temp_s) + signed(temp_rd);
+                end if;             
+                acc <= '0';
+        elsif(work='1' and work'event)then
             if(input_instruction=mul)then
                 result_unsigned <= unsigned(Rs_multiplier) * unsigned(Rm_multiplier);
             elsif(input_instruction=mla)then
@@ -46,16 +52,8 @@ architecture Behavioral of Multiplier is
                 acc <= '1';
             end if;
         end if;
-        
-        if(acc = '1' and acc'event) then
-            if(input_instruction=umlal)then
-                 result_unsigned <= unsigned(temp_u) + unsigned(temp_rd);
-            elsif(input_instruction=smlal)then
-                 result_signed <= signed(temp_s) + signed(temp_rd);
-            end if;             
-            acc <= '0';
-        end if;
-    end process;
+
+end process;
     
         result <= std_logic_vector(result_unsigned) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
                   std_logic_vector(result_signed)   when (input_instruction=smull or input_instruction=smlal);
