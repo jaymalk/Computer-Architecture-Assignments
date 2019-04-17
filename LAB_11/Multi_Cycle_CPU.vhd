@@ -439,8 +439,8 @@ begin
                                 flow <= done;
                                 -- Branch instructions complete here (go to common stage)
                                 stage <= common_first;
-                                -- If link register is to be set then, (PC+1) is sent to R14
-                                RF(14) <= std_logic_vector(to_unsigned(PC+1, 32));
+                                -- If link register is to be set then, (PC) is sent to R14
+                                RF(14) <= std_logic_vector(to_unsigned(PC, 32));
                                 -- Branch instruction executes on predicate check only
                                 RF(15) <= std_logic_vector(to_unsigned(PC + 1 + (to_integer(signed(B))/4), 32));
                             -- Class is Unknown, return to Common_first

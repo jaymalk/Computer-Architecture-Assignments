@@ -9,6 +9,7 @@ umlal r6,r7,r0,r3
 mov r1, #0
 mul r2,r1,r0
 mov r3,#0
+mov pc,lr
 
 @ Lab 10 main.coe code -001
 @ E3A0000F,E0010090,E0221090,E1A03E00,
