@@ -8,7 +8,6 @@ use work.Data_Type.all;
 entity Multiplier is
     Port (
             -- Input Parameters
-            work: in std_logic;    -- Logic for allowing use
             Rd_multiplier, Rn_multiplier, Rs_multiplier, Rm_multiplier : in std_logic_vector(31 downto 0); -- Input Values
             input_instruction : in instruction_type; -- Instruction to follow
 
@@ -21,12 +20,10 @@ end Multiplier;
 
 architecture Behavioral of Multiplier is
     signal result_signed_acc, result_signed_mul: signed(65 downto 0);
-    signal temp_u, result_unsigned: unsigned(65 downto 0);
     signal temp_rd: std_logic_vector(65 downto 0);
     signal RS, RM, RN : std_logic_vector(32 downto 0);
     signal result: std_logic_vector(63 downto 0);
     signal xs, xm, xd, xn : std_logic;
-    signal acc : std_logic := '0';
     
     begin 
     
@@ -49,39 +46,10 @@ architecture Behavioral of Multiplier is
     result_signed_mul <= signed(RS) * signed(RM);
     
     result_signed_acc <= signed(result_signed_mul) + signed(temp_rd);
---     process(work, acc)
---     begin
---         if(acc = '1') then
---                 if(input_instruction=umlal)then
---                      result_unsigned <= unsigned(temp_u) + unsigned(temp_rd);
---                 elsif(input_instruction=smlal)then
---                      result_signed <= signed(temp_s) + signed(temp_rd);
---                 end if;             
---                 acc <= '0';
---         elsif(work='1' and work'event)then
---             if(input_instruction=mul)then
---                 result_unsigned <= unsigned(RS) * unsigned(RM);
---             elsif(input_instruction=mla)then
---                 result_unsigned <= (unsigned(RS) * unsigned(RM)) + unsigned(Rn_multiplier);
---             elsif(input_instruction=umull)then
---                 result_unsigned <= unsigned(RS) * unsigned(RM);
---             elsif(input_instruction=umlal)then
---                 temp_u <= (unsigned(RS) * unsigned(RM));
---                 acc <= '1';
---             elsif(input_instruction=smull)then
---                 result_signed <= signed(RS) * signed(RM);
---             elsif(input_instruction=smlal)then
---                 temp_s <= ( signed(RS) * signed(RM));
---                 acc <= '1';
---             end if;
---         end if;
 
--- end process;
     
-        -- result <= std_logic_vector(result_unsigned(63 downto 0)) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
         result <= std_logic_vector(result_signed_mul(63 downto 0)) when (input_instruction = mul or input_instruction = umull or input_instruction = smull) else
                   std_logic_vector(result_signed_acc(63 downto 0)) when (input_instruction = mla or input_instruction = umlal or input_instruction = smlal);
-        --    when (input_instruction=smull or input_instruction=smlal);
         
         Result_Hi <= result(63 downto 32);
         Result_Lo <= result(31 downto 0);
