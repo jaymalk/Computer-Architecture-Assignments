@@ -41,8 +41,8 @@ architecture Behavioral of Multiplier is
     xm <= Rm_multiplier(31) when (input_instruction = smull or input_instruction = smlal) else '0';
           
     RM <= xm & Rm_multiplier;
-    
 
+    result_signed <= signed(RS) * signed(RM);
     
 --     process(work, acc)
 --     begin
@@ -73,8 +73,9 @@ architecture Behavioral of Multiplier is
 
 -- end process;
     
-        result <= std_logic_vector(result_unsigned(63 downto 0)) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
-                  std_logic_vector(result_signed(63 downto 0))   when (input_instruction=smull or input_instruction=smlal);
+        -- result <= std_logic_vector(result_unsigned(63 downto 0)) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
+        result <= std_logic_vector(result_signed(63 downto 0));
+        --    when (input_instruction=smull or input_instruction=smlal);
         
         Result_Hi <= result(63 downto 32);
         Result_Lo <= result(31 downto 0);
