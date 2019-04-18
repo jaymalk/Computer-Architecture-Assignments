@@ -129,7 +129,6 @@ architecture Behavioral of CPU_MULTI is
     component Multiplier is
         Port (
                 -- Input Parameters
-                work: in std_logic;    -- Logic for allowing use
                 Rd_multiplier, Rn_multiplier, Rs_multiplier, Rm_multiplier : in std_logic_vector(31 downto 0); -- Input Values
                 input_instruction : in instruction_type; -- Instruction to follow
     
@@ -155,7 +154,6 @@ architecture Behavioral of CPU_MULTI is
       end component;
 
     -- Signal for handeling working and result from multiplier
-    signal MULTIPLIER_ON : std_logic := '0';
     signal C,D: std_logic_vector(31 downto 0); --input to multiplier
     signal result_hi_from_multiplier, result_lo_from_multiplier: std_logic_vector(31 downto 0);
     signal Zero_Flag_Multiplier, Neg_Flag_Multiplier: std_logic;
@@ -306,7 +304,6 @@ begin
     Multiplier_ref : Multiplier
     Port Map(
         -- Input Parameters
-        work => MULTIPLIER_ON,    -- Logic for allowing use
         Rd_multiplier => A,
         Rn_multiplier => B,
         Rs_multiplier => C,
@@ -430,7 +427,6 @@ begin
                                 B <= RF(to_integer(unsigned(RD)));
                                 C <= RF(to_integer(unsigned(RS)));
                                 D <= RF(to_integer(unsigned(RM)));
-                                MULTIPLIER_ON <= '1';
                                 stage <= fourth;
     
                             -- Branch instructions
@@ -455,7 +451,6 @@ begin
                         if(flow = onestep or flow = oneinstr or flow = cont) then
                             -- Turn off the ALU
                             ALU_ON <= '0';
-                            MULTIPLIER_ON <= '0';
     
                             if(class = DP) then
                                 -- DP instructions complete here
