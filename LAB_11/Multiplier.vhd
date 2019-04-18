@@ -42,34 +42,34 @@ architecture Behavioral of Multiplier is
           
     RM <= xm & Rm_multiplier;
     
-    process(work, acc)
-    begin
-        if(acc = '1') then
-                if(input_instruction=umlal)then
-                     result_unsigned <= unsigned(temp_u) + unsigned(temp_rd);
-                elsif(input_instruction=smlal)then
-                     result_signed <= signed(temp_s) + signed(temp_rd);
-                end if;             
-                acc <= '0';
-        elsif(work='1' and work'event)then
-            if(input_instruction=mul)then
-                result_unsigned <= unsigned(RS) * unsigned(RM);
-            elsif(input_instruction=mla)then
-                result_unsigned <= (unsigned(RS) * unsigned(RM)) + unsigned(Rn_multiplier);
-            elsif(input_instruction=umull)then
-                result_unsigned <= unsigned(RS) * unsigned(RM);
-            elsif(input_instruction=umlal)then
-                temp_u <= (unsigned(RS) * unsigned(RM));
-                acc <= '1';
-            elsif(input_instruction=smull)then
-                result_signed <= signed(RS) * signed(RM);
-            elsif(input_instruction=smlal)then
-                temp_s <= ( signed(RS) * signed(RM));
-                acc <= '1';
-            end if;
-        end if;
+--     process(work, acc)
+--     begin
+--         if(acc = '1') then
+--                 if(input_instruction=umlal)then
+--                      result_unsigned <= unsigned(temp_u) + unsigned(temp_rd);
+--                 elsif(input_instruction=smlal)then
+--                      result_signed <= signed(temp_s) + signed(temp_rd);
+--                 end if;             
+--                 acc <= '0';
+--         elsif(work='1' and work'event)then
+--             if(input_instruction=mul)then
+--                 result_unsigned <= unsigned(RS) * unsigned(RM);
+--             elsif(input_instruction=mla)then
+--                 result_unsigned <= (unsigned(RS) * unsigned(RM)) + unsigned(Rn_multiplier);
+--             elsif(input_instruction=umull)then
+--                 result_unsigned <= unsigned(RS) * unsigned(RM);
+--             elsif(input_instruction=umlal)then
+--                 temp_u <= (unsigned(RS) * unsigned(RM));
+--                 acc <= '1';
+--             elsif(input_instruction=smull)then
+--                 result_signed <= signed(RS) * signed(RM);
+--             elsif(input_instruction=smlal)then
+--                 temp_s <= ( signed(RS) * signed(RM));
+--                 acc <= '1';
+--             end if;
+--         end if;
 
-end process;
+-- end process;
     
         result <= std_logic_vector(result_unsigned(63 downto 0)) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
                   std_logic_vector(result_signed(63 downto 0))   when (input_instruction=smull or input_instruction=smlal);
