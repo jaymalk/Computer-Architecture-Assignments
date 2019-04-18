@@ -1,6 +1,5 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
---use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.NUMERIC_STD.ALL;
 use work.Data_Type.all;
 
@@ -20,27 +19,12 @@ entity Multiplier is
 end Multiplier;
 
 architecture Behavioral of Multiplier is
-    signal temp_s, result_signed: signed(65 downto 0);
-    signal temp_u, result_unsigned: unsigned(65 downto 0);
-    signal temp_rd: std_logic_vector(65 downto 0);
-    signal RS, RM, RN : std_logic_vector(32 downto 0);
-    signal result: std_logic_vector(63 downto 0);
-    signal xs, xm, xd : std_logic;
+    signal temp_s, result_signed: signed(63 downto 0);
+    signal temp_u, result_unsigned: unsigned(63 downto 0);
+    signal result, temp_rd: std_logic_vector(63 downto 0);
     signal acc : std_logic := '0';
     
     begin 
-    
-    xd <= Rd_multiplier(31) when (input_instruction = smull or input_instruction = smlal) else '0';
-
-    temp_rd <= xd & xd & Rd_multiplier & Rn_multiplier;
-
-    xs <= Rs_multiplier(31) when (input_instruction = smull or input_instruction = smlal) else '0';
-               
-    RS <= xs & Rs_multiplier;
-    
-    xm <= Rm_multiplier(31) when (input_instruction = smull or input_instruction = smlal) else '0';
-          
-    RM <= xm & Rm_multiplier;
     
     process(work, acc)
     begin
@@ -53,30 +37,32 @@ architecture Behavioral of Multiplier is
                 acc <= '0';
         elsif(work='1' and work'event)then
             if(input_instruction=mul)then
-                result_unsigned <= unsigned(RS) * unsigned(RM);
+                result_unsigned <= unsigned(Rs_multiplier) * unsigned(Rm_multiplier);
             elsif(input_instruction=mla)then
-                result_unsigned <= (unsigned(RS) * unsigned(RM)) + unsigned(Rn_multiplier);
+                result_unsigned <= (unsigned(Rs_multiplier) * unsigned(Rm_multiplier)) + unsigned(Rn_multiplier);
             elsif(input_instruction=umull)then
-                result_unsigned <= unsigned(RS) * unsigned(RM);
+                result_unsigned <= unsigned(Rs_multiplier) * unsigned(Rm_multiplier);
             elsif(input_instruction=umlal)then
-                temp_u <= (unsigned(RS) * unsigned(RM));
+                temp_u <= (unsigned(Rs_multiplier) * unsigned(Rm_multiplier));
                 acc <= '1';
             elsif(input_instruction=smull)then
-                result_signed <= signed(RS) * signed(RM);
+                result_signed <= signed(Rs_multiplier) * signed(Rm_multiplier);
             elsif(input_instruction=smlal)then
-                temp_s <= ( signed(RS) * signed(RM));
+                temp_s <= ( signed(Rs_multiplier) * signed(Rm_multiplier));
                 acc <= '1';
             end if;
         end if;
 
 end process;
     
-        result <= std_logic_vector(result_unsigned(63 downto 0)) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
-                  std_logic_vector(result_signed(63 downto 0))   when (input_instruction=smull or input_instruction=smlal);
+        result <= std_logic_vector(result_unsigned) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
+                  std_logic_vector(result_signed)   when (input_instruction=smull or input_instruction=smlal);
         
         Result_Hi <= result(63 downto 32);
         Result_Lo <= result(31 downto 0);
     
+        temp_rd <= Rd_multiplier & Rn_multiplier; 
+        
         N_Flag <= result(31) when (input_instruction = mul or input_instruction = mla) else
                   result(63);
 
