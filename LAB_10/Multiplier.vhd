@@ -20,19 +20,23 @@ entity Multiplier is
 end Multiplier;
 
 architecture Behavioral of Multiplier is
-    signal temp_s, result_signed: signed(65 downto 0);
+    signal result_signed_acc, result_signed_mul: signed(65 downto 0);
     signal temp_u, result_unsigned: unsigned(65 downto 0);
     signal temp_rd: std_logic_vector(65 downto 0);
     signal RS, RM, RN : std_logic_vector(32 downto 0);
     signal result: std_logic_vector(63 downto 0);
-    signal xs, xm, xd : std_logic;
+    signal xs, xm, xd, xn : std_logic;
     signal acc : std_logic := '0';
     
     begin 
     
     xd <= Rd_multiplier(31) when (input_instruction = smull or input_instruction = smlal) else '0';
+    
+    xn <= Rn_multiplier(31) when (input_instruction = smull or input_instruction = smlal) else '0';
 
-    temp_rd <= xd & xd & Rd_multiplier & Rn_multiplier;
+    temp_rd <= (xd & xd & Rd_multiplier & Rn_multiplier) when (input_instruction = smlal or input_instruction = umlal) else
+               ("0000000000000000000000000000000000" & Rn_multiplier) when (xn = '0') else
+               ("1111111111111111111111111111111111" & Rn_multiplier) when (xn = '1');
 
     xs <= Rs_multiplier(31) when (input_instruction = smull or input_instruction = smlal) else '0';
                
@@ -42,8 +46,9 @@ architecture Behavioral of Multiplier is
           
     RM <= xm & Rm_multiplier;
 
-    result_signed <= signed(RS) * signed(RM);
+    result_signed_mul <= signed(RS) * signed(RM);
     
+    result_signed_acc <= signed(result_signed_mul) + signed(temp_rd);
 --     process(work, acc)
 --     begin
 --         if(acc = '1') then
@@ -74,7 +79,8 @@ architecture Behavioral of Multiplier is
 -- end process;
     
         -- result <= std_logic_vector(result_unsigned(63 downto 0)) when (input_instruction=mul or input_instruction=mla or input_instruction=umull or input_instruction=umlal) else
-        result <= std_logic_vector(result_signed(63 downto 0));
+        result <= std_logic_vector(result_signed_mul(63 downto 0)) when (input_instruction = mul or input_instruction = umull or input_instruction = smull) else
+                  std_logic_vector(result_signed_acc(63 downto 0)) when (input_instruction = mla or input_instruction = umlal or input_instruction = smlal);
         --    when (input_instruction=smull or input_instruction=smlal);
         
         Result_Hi <= result(63 downto 32);
