@@ -19,10 +19,10 @@ def main():
                 break
             enc = line.split(',')[:4]
             for code in enc:
-                _fl[0].write(code[:2]+',')
-                _fl[1].write(code[2:4]+',')
-                _fl[2].write(code[4:6]+',')
-                _fl[3].write(code[6:]+',')
+                _fl[3].write(code[:2]+',')
+                _fl[2].write(code[2:4]+',')
+                _fl[1].write(code[4:6]+',')
+                _fl[0].write(code[6:]+',')
             _fl[0].write('\n')
             _fl[1].write('\n')
             _fl[2].write('\n')
