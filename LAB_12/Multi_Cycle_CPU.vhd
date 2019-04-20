@@ -66,7 +66,12 @@ architecture Behavioral of CPU_MULTI is
     -- Values held by RM and RN (which may be used by ALU)
     signal A, B : std_logic_vector(31 downto 0);
 
+    -- Register File Data Type (0-15 usr, 16 - CPSR, 17 - R13_svc, 18 - R14_svc, 19 SPSR_svc)
     signal RF: register_file_datatype;
+    alias CPSR      : std_logic_vector(31 downto 0) is RF(16);
+    alias R13_svc   : std_logic_vector(31 downto 0) is RF(17);
+    alias R14_svc   : std_logic_vector(31 downto 0) is RF(18);
+    alias SPSR_svc  : std_logic_vector(31 downto 0) is RF(19);
 
     -- Signal represting the program counter (PC)
     signal PC: integer := 0;
@@ -157,6 +162,7 @@ architecture Behavioral of CPU_MULTI is
     signal C,D: std_logic_vector(31 downto 0); --input to multiplier
     signal result_hi_from_multiplier, result_lo_from_multiplier: std_logic_vector(31 downto 0);
     signal Zero_Flag_Multiplier, Neg_Flag_Multiplier: std_logic;
+
     -- Shifter component from the Shifter module
     component Shifter
         Port (
@@ -174,6 +180,12 @@ architecture Behavioral of CPU_MULTI is
     -- Signal for handeling working and result from ALU
     signal ALU_ON : std_logic := '0';
     signal result_from_ALU : std_logic_vector(31 downto 0);
+
+    -- EXCEPTIONS (Datatypes and signals for working with exceptions)
+    type state_access is usr, spc, unknown;
+    signal state : state_access := unknown;
+    type exception_type is rstexn, undexn, swiexn, irqexn, noexn;
+    signal exception : exception := noexn;
 
 begin
 

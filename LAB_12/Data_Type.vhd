@@ -6,7 +6,7 @@ package data_type is
 
     -- Data type for Register File
     type register_file_datatype is
-        array(0 to 15) of std_logic_vector(31 downto 0);
+        array(0 to 19) of std_logic_vector(31 downto 0);
 
     -- Data type for Instruction Type
     type instruction_class is
