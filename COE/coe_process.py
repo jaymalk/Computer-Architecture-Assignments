@@ -8,16 +8,17 @@ def main():
         exit(2)
     name = sys.argv[1]
     with open(name, "r+") as _f:
-        _f.readline()
-        _f.readline()
         _fl = [open(str(i)+"_"+name, "w+") for i in range(4)]
+        l1 = _f.readline()
+        l2 = _f.readline()
+        for file in _fl:
+            file.write(l1+l2)
         while True:
             line = _f.readline()
             if line == '' or line == ';':
                 break
             enc = line.split(',')[:4]
             for code in enc:
-                print(code)
                 _fl[0].write(code[:2]+',')
                 _fl[1].write(code[2:4]+',')
                 _fl[2].write(code[4:6]+',')
