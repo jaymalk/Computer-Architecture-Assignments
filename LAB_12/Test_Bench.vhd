@@ -59,8 +59,9 @@ architecture Behavioral of TestBench is
     -- Program selector
     signal PC_Start: integer := 0;
 
-    -- Component representing the data memory
-    component DataMemory
+    -- Component representing the data memory 
+        -- Needs 4 different copies for working with different COE's
+    component Memory_0
       port (
         a : in STD_LOGIC_VECTOR(7 downto 0);
         d : in STD_LOGIC_VECTOR(7 downto 0);
@@ -71,6 +72,42 @@ architecture Behavioral of TestBench is
         dpo : out STD_LOGIC_VECTOR(7 downto 0)
       );
     end component;
+    component Memory_1
+      port (
+        a : in STD_LOGIC_VECTOR(7 downto 0);
+        d : in STD_LOGIC_VECTOR(7 downto 0);
+        dpra : in STD_LOGIC_VECTOR(7 downto 0);
+        clk : in STD_LOGIC;
+        we : in STD_LOGIC;
+        spo : out STD_LOGIC_VECTOR(7 downto 0);
+        dpo : out STD_LOGIC_VECTOR(7 downto 0)
+      );
+    end component;
+    component Memory_2
+      port (
+        a : in STD_LOGIC_VECTOR(7 downto 0);
+        d : in STD_LOGIC_VECTOR(7 downto 0);
+        dpra : in STD_LOGIC_VECTOR(7 downto 0);
+        clk : in STD_LOGIC;
+        we : in STD_LOGIC;
+        spo : out STD_LOGIC_VECTOR(7 downto 0);
+        dpo : out STD_LOGIC_VECTOR(7 downto 0)
+      );
+    end component;
+    component Memory_3
+      port (
+        a : in STD_LOGIC_VECTOR(7 downto 0);
+        d : in STD_LOGIC_VECTOR(7 downto 0);
+        dpra : in STD_LOGIC_VECTOR(7 downto 0);
+        clk : in STD_LOGIC;
+        we : in STD_LOGIC;
+        spo : out STD_LOGIC_VECTOR(7 downto 0);
+        dpo : out STD_LOGIC_VECTOR(7 downto 0)
+      );
+    end component;
+
+
+
     
     -- Component representing the instruction memory
     component ProgramMemory
@@ -208,7 +245,7 @@ begin
     Instruction_From_IM <= Instruction_From_IM_3 & Instruction_From_IM_2 & Instruction_From_IM_1 & Instruction_From_IM_0 ; 
 
     -- MEMORY MAPPING
-    DM_0 : DataMemory
+    DM_0 : Memory_0
     port map (
         a => DM_Address,
         d => Data_To_DM_0,
@@ -219,7 +256,7 @@ begin
         dpo => Instruction_From_IM_0
     );
 
-    DM_1 : DataMemory
+    DM_1 : Memory_1
     port map (
         a => DM_Address,
         d => Data_To_DM_1,
@@ -230,7 +267,7 @@ begin
         dpo => Instruction_From_IM_1
     );
 
-    DM_2 : DataMemory
+    DM_2 : Memory_2
     port map (
         a => DM_Address,
         d => Data_To_DM_2,
@@ -241,7 +278,7 @@ begin
         dpo => Instruction_From_IM_2
     );
 
-    DM_3 : DataMemory
+    DM_3 : Memory_3
     port map (
         a => DM_Address,
         d => Data_To_DM_3,
