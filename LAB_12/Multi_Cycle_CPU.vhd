@@ -335,20 +335,17 @@ begin
     Address_To_IM <= PC;
     RF_For_Display <= RF;
 
-    --
+    -- Dividing the data components byte-wise
     Data_From_DM_3 <= Data_From_DM(31 downto 24);
     Data_From_DM_2 <= Data_From_DM(23 downto 16);
     Data_From_DM_1 <= Data_From_DM(15 downto 8);
     Data_From_DM_0 <= Data_From_DM(7 downto 0);
-
+    -- Making individual bytes into one word
     Data_To_DM <= Data_To_DM_3 & Data_To_DM_2 & Data_To_DM_1 & Data_To_DM_0 ; 
 
     -- BOTH FMS'S FOR STAGE && FLOW_COMMAND
         -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
-            -- Modified for oneinstr. Most instructions same, little modification in initial.
         -- MAIN WORKING FOR THE CPU (ALU)
-            -- NEW MULTI CYCLE CODE
-            -- FOR NOW TESTING FSM IS IGNORED (THESE CAN BE ADDED EASILY LATER ON)
     process(main_clock)
     begin
         ------------------------------------------

@@ -41,9 +41,14 @@ architecture Behavioral of TestBench is
 
     -- CPU signals (for mapping)
     signal Address_To_IM, Address_To_DM : integer;
+        -- Desired words, to be sent to CPU
     signal Instruction_From_IM, Data_To_DM, Data_From_DM : std_logic_vector(31 downto 0);
+        -- Data to DM, bytes
     signal Data_To_DM_0, Data_To_DM_1, Data_To_DM_2, Data_To_DM_3: std_logic_vector(7 downto 0);
+        -- Data from DM, bytes
     signal Data_From_DM_0, Data_From_DM_1, Data_From_DM_2, Data_From_DM_3: std_logic_vector(7 downto 0);
+        -- Instruction fetched, bytes
+    signal Instruction_From_IM_0, Instruction_From_IM_1, Instruction_From_IM_2, Instruction_From_IM_3: std_logic_vector(7 downto 0);
 
     -- Address to program and data memory
     signal DM_Address, IM_Address : std_logic_vector(7 downto 0);
@@ -59,9 +64,11 @@ architecture Behavioral of TestBench is
       port (
         a : in STD_LOGIC_VECTOR(7 downto 0);
         d : in STD_LOGIC_VECTOR(7 downto 0);
+        dpra : in STD_LOGIC_VECTOR(7 downto 0);
         clk : in STD_LOGIC;
         we : in STD_LOGIC;
-        spo : out STD_LOGIC_VECTOR(7 downto 0)
+        spo : out STD_LOGIC_VECTOR(7 downto 0);
+        dpo : out STD_LOGIC_VECTOR(7 downto 0)
       );
     end component;
     
@@ -126,6 +133,8 @@ begin
         );
 
 ------------------------------------------------------------
+-- BUTTONS
+
     -- Assigning the buttons their respective positions
         -- Reset Button
         Reset_Component: entity  work.debouncer(architecture_debouncer) port map(Reset_Button, slow_clock, reset);
@@ -135,19 +144,10 @@ begin
         Go_Component: entity  work.debouncer(architecture_debouncer) port map(Go_Button, slow_clock, go);
         -- Instr button
         Instr_Component: entity  work.debouncer(architecture_debouncer) port map(Instr_Button, slow_clock, instr);
-    
+
 ------------------------------------------------------------
-    -- Concurrent assignement of IM_Address(8 bit vector), from Address_To_IM (integer)
-    IM_Address <= std_logic_vector(to_unsigned(Address_To_IM, 8));
-    
-    -- Mapping the parameters of ProgramMemory
-    IM : ProgramMemory
-    port map (
-        a => IM_Address,
-        spo => Instruction_From_IM
-    );
-    
-------------------------------------------------------------
+-- CPU COMPONENTS 
+
     -- Determining thr program to work with (if initialsing is needed.)
     PC_Start <= ((32) * to_integer(unsigned(Program_Select)));
 
@@ -186,50 +186,70 @@ begin
         );
     
 ------------------------------------------------------------
+-- MEMORY COMPONENTS
+
+    -- (BREAKING AND MERGING)
+
+        -- DATA RELATED COMPONENTS
     -- Concurrent assignement of DM_Address(8 bit vector), from Address_To_DM (integer)
     DM_Address <= std_logic_vector(to_unsigned(Address_To_DM, 8));
-    
+    -- Getting indiviual bytes from main data
     Data_To_DM_3 <= Data_To_DM(31 downto 24);
     Data_To_DM_2 <= Data_To_DM(23 downto 16);
     Data_To_DM_1 <= Data_To_DM(15 downto 8);
     Data_To_DM_0 <= Data_To_DM(7 downto 0);
-
+    -- Settng data memory component from individual bytes
     Data_From_DM <= Data_From_DM_3 & Data_From_DM_2 & Data_From_DM_1 & Data_From_DM_0 ; 
-    -- Data Memory Components
+
+        -- INSTRUCTION RELATED COMPONENTS
+    -- Concurrent assignement of IM_Address(8 bit vector), from Address_To_IM (integer)
+    IM_Address <= std_logic_vector(to_unsigned(Address_To_IM, 8));
+    -- Settng data memory component from individual bytes
+    Instruction_From_IM <= Instruction_From_IM_3 & Instruction_From_IM_2 & Instruction_From_IM_1 & Instruction_From_IM_0 ; 
+
+    -- MEMORY MAPPING
     DM_0 : DataMemory
     port map (
         a => DM_Address,
         d => Data_To_DM_0,
+        dpra => IM_Address,
         clk => test_clock,
         we => Write_Enable_0,
-        spo => Data_From_DM_0
+        spo => Data_From_DM_0,
+        dpo => Instruction_From_IM_0
     );
 
     DM_1 : DataMemory
     port map (
         a => DM_Address,
         d => Data_To_DM_1,
+        dpra => IM_Address, 
         clk => test_clock,
         we => Write_Enable_1,
-        spo => Data_From_DM_1
+        spo => Data_From_DM_1,
+        dpo => Instruction_From_IM_1
     );
 
     DM_2 : DataMemory
     port map (
         a => DM_Address,
         d => Data_To_DM_2,
+        dpra => IM_Address,
         clk => test_clock,
         we => Write_Enable_2,
-        spo => Data_From_DM_2
+        spo => Data_From_DM_2,
+        dpo => Instruction_From_IM_2
     );
 
     DM_3 : DataMemory
     port map (
         a => DM_Address,
         d => Data_To_DM_3,
+        dpra => IM_Address,
         clk => test_clock,
         we => Write_Enable_3,
-        spo => Data_From_DM_3
+        spo => Data_From_DM_3,
+        dpo => Instruction_From_IM_3
     );
 ------------------------------------------------------------ 
 
