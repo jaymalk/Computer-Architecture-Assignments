@@ -61,6 +61,8 @@ begin
     command_class_out <= command_class;
 
     command_class <= 
+                -- SWI
+                SWI when (instruction(27 downto 24) = "1111") else
                 -- MUL
                 MUL when (instruction(27 downto 24) = "0000" and instruction(7 downto 4) = "1001") else
                 -- DP
@@ -72,7 +74,9 @@ begin
                 -- Unknown
                 unknown;
 
-    command <=  -- MUL
+    command <=  -- SWI
+                swi when (command_class = SWI) else
+                -- MUL
                 mul when (instruction(27 downto 22) = "000000" and instruction(7 downto 4) = "1001" and instruction(21) = '0' and command_class = MUL) else
                 mla when (instruction(27 downto 22) = "000000" and instruction(7 downto 4) = "1001" and instruction(21) = '1' and command_class = MUL) else
               umull when (instruction(27 downto 23) = "00001"  and instruction(7 downto 4) = "1001" and instruction(22 downto 21) = "00" and command_class = MUL) else

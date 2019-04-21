@@ -15,6 +15,8 @@ entity CPU_MULTI is
             PC_Start: in integer;
                 -- Variables which handle user input for testing FSM
             step, go, instr: in std_logic;
+                -- External Exception Handle (IRQ and RESET)
+            irq, rst : in std_logic;
 
             -- Output Parameters
                 -- Address to be sent to instruction memory to get Instruction (PC is sent)
@@ -67,11 +69,13 @@ architecture Behavioral of CPU_MULTI is
     signal A, B : std_logic_vector(31 downto 0);
 
     -- Register File Data Type (0-15 usr, 16 - CPSR, 17 - R13_svc, 18 - R14_svc, 19 SPSR_svc)
-    signal RF: register_file_datatype;
-    alias CPSR      : std_logic_vector(31 downto 0) is RF(16);
-    alias R13_svc   : std_logic_vector(31 downto 0) is RF(17);
-    alias R14_svc   : std_logic_vector(31 downto 0) is RF(18);
-    alias SPSR_svc  : std_logic_vector(31 downto 0) is RF(19);
+    signal RFF: register_file_datatype;
+    alias CPSR      : std_logic_vector(31 downto 0) is RFF(16);
+    alias R13_svc   : std_logic_vector(31 downto 0) is RFF(17);
+    alias R14_svc   : std_logic_vector(31 downto 0) is RFF(18);
+    alias SPSR_svc  : std_logic_vector(31 downto 0) is RFF(19);
+    
+    signal RF : register_file_datatype;
 
     -- Signal represting the program counter (PC)
     signal PC: integer := 0;
@@ -82,7 +86,15 @@ architecture Behavioral of CPU_MULTI is
     signal C_Shift : std_logic := '0'; -- C bit from the shifter
 
     -- Signal for keeping in check the flags
-    signal Zero_Flag, Carry_Flag, Neg_Flag, Over_Flag, Set_Flag: std_logic := '0';
+    signal Set_Flag: std_logic := '0';
+    
+    -- Setting alias with respect to CPSR register
+    alias Zero_Flag  : std_logic is CPSR(30);
+    alias Carry_Flag : std_logic is CPSR(29);
+    alias Neg_Flag   : std_logic is CPSR(31);
+    alias Over_Flag  : std_logic is CPSR(28);
+    alias IRQ_disable: std_logic is CPSR(7);
+    alias mode : std_logic_vector(4 downto 0) is CPSR(4 downto 0);
 
     -- Signals for new flags from ALU
     signal Zero_Flag_ALU, Carry_Flag_ALU, Neg_Flag_ALU, Over_Flag_ALU: std_logic;
@@ -92,7 +104,7 @@ architecture Behavioral of CPU_MULTI is
     signal flow: flow_type := initial;
 
     -- State signal and types for CPU controller FSM (cycle stage)
-    type stage_type is (common_first, common_second, shift_stage, third, fourth, fifth_ldr);
+    type stage_type is (exception_handle, common_first, common_second, shift_stage, third, fourth, fifth_ldr);
     signal stage : stage_type := common_first ;
 
     -- Data in and out from Memory
@@ -182,15 +194,24 @@ architecture Behavioral of CPU_MULTI is
     signal result_from_ALU : std_logic_vector(31 downto 0);
 
     -- EXCEPTIONS (Datatypes and signals for working with exceptions)
-    type state_access is usr, spc, unknown;
+    type state_access is (usr, svc, unknown);
     signal state : state_access := unknown;
-    type exception_type is rstexn, undexn, swiexn, irqexn, noexn;
-    signal exception : exception := noexn;
+    type exception_type is (rstexn, undexn, swiexn, irqexn, noexn);
+    signal exception : exception_type := noexn;
 
 begin
 
     -- Concurrent assignment of the signals from positions in the instruction (preserved one) --
-
+    
+    -- Setting state w.r.t mode bits
+    state <= usr when mode = "10000" else
+             svc when mode = "10011" else
+             unknown;
+             
+    -- Setting register files with respect to current mode
+    RF(15 downto 0) <= RFF(15 downto 0) when state = usr else
+                        RFF(15) & RF(18 downto 17) & RFF(12 downto 0);
+    
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);
     F_Class <= instruction(27 downto 26);
@@ -370,24 +391,56 @@ begin
             elsif(main_clock='1' and main_clock'event) then
                 -- Deciding the current stage
                 case stage is
-    
+                
+                    -- Stage for Exception Handling
+                    when exception_handle =>
+                        -- Saving return address in R14_svc
+                        R14_svc <= RF(15);
+                        -- Saving CPSR in SPSR_svc
+                        SPSR_svc <= CPSR;
+                        -- Setting new mode
+                        mode <= "10011";
+                        -- Disabling IRQ_enable
+                        IRQ_disable <= '1';
+                        -- Setting Address
+                        if (exception = rstexn) then 
+                            RF(15) <= "00000000000000000000000000000000";
+                        elsif (exception = undexn) then
+                            RF(15) <= "00000000000000000000000000000100";
+                        elsif (exception = swiexn) then
+                            RF(15) <= "00000000000000000000000000001000";
+                        else -- irqexn
+                            RF(15) <= "00000000000000000000000000010010";
+                        end if;
+                        -- Starting again
+                        stage <= common_first;
+                        
                     -- First stage (Common in all)
                     when common_first =>
                         if(flow = onestep or flow = oneinstr or flow = cont) then
-                            if(not(instruction="00000000000000000000000000000000"))then
-                                -- Increment PC
-                                RF(15) <= std_logic_vector(to_unsigned(PC+1, 32));
-                            end if;
-                                -- Store instruction
-                                instruction <= Instruction_From_IM;
-                                -- Go to next stage
-                                stage <= common_second;
-                                -- Disabling Write_Enable
-                                Write_Enable_0 <= '0';
-                                Write_Enable_1 <= '0';
-                                Write_Enable_2 <= '0';
-                                Write_Enable_3 <= '0';
-                            
+                            if(irq = '1' and not IRQ_disable = '1') then -- Instruction not exceuted and saved
+                                exception <= irqexn;
+                                stage <= exception_handle;
+                            else
+                                if(not(instruction="00000000000000000000000000000000"))then
+                                    -- Increment PC
+                                    RF(15) <= std_logic_vector(to_unsigned(PC+1, 32));
+                                end if;
+                                    -- Store instruction
+                                    instruction <= Instruction_From_IM;
+                                    -- Go to next stage
+                                    if(rst = '1') then
+                                        exception <= rstexn;
+                                        stage <= exception_handle;
+                                    else
+                                        stage <= common_second;
+                                    end if;
+                                    -- Disabling Write_Enable
+                                    Write_Enable_0 <= '0';
+                                    Write_Enable_1 <= '0';
+                                    Write_Enable_2 <= '0';
+                                    Write_Enable_3 <= '0';
+                           end if;
                         end if;
     
                     -- Second stage (Common in all)
@@ -399,9 +452,18 @@ begin
                             -- Saves a lot of effort in later cases. (Different from provided ASM)
                             B <= RM_val;
                             -- Go to next stage
-                            if(not check) then
+                            if (rst = '1') then
+                                exception <= rstexn;
+                                stage <= exception_handle;
+                            elsif (current_ins = unknown) then
+                                exception <= undexn;
+                                stage <= exception_handle;
+                            elsif(not check) then
                                 stage <= common_first;
                                 flow <= done;
+                            elsif (current_ins = swi) then
+                                exception <= swiexn;
+                                stage <= exception_handle;
                             elsif (class = DP or ((current_ins = ldr or current_ins = str or current_ins = ldrb or current_ins = strb) and  Immediate = '1') ) then
                                 stage <= shift_stage;
                             else
@@ -415,7 +477,12 @@ begin
                             -- Setting the Shifted value in B
                             B <= shift_val;
                             -- Moving to next stage
-                            stage <= third;
+                            if (rst = '1') then
+                                exception <= rstexn;
+                                stage <= exception_handle;
+                            else
+                                stage <= third;
+                            end if;
                         elsif (flow = done) then
                             if(instruction = "00000000000000000000000000000000") then
                                 stage <= common_first;
@@ -425,10 +492,14 @@ begin
                     -- Third stage (Common in classes)
                     when third =>
                         if(flow = onestep or flow = oneinstr or flow = cont) then
+                            if (rst = '1') then
+                                -- RESET EXCEPTION CALLED
+                                exception <= rstexn;
+                                stage <= exception_handle;
                             -- DP and DT instructions
-                            if(class = DP or class = DT) then
+                            elsif(class = DP or class = DT) then
                                     -- DP and DT instructions go to fourth stage
-                                    stage <= fourth;
+                                        stage <= fourth;
                                     -- Get result from ALU (in next cycle)
                                     ALU_ON <= '1';
                             
@@ -460,8 +531,11 @@ begin
                         if(flow = onestep or flow = oneinstr or flow = cont) then
                             -- Turn off the ALU
                             ALU_ON <= '0';
-    
-                            if(class = DP) then
+                            if (rst = '1') then
+                                -- RESET EXCEPTION CALLED
+                                exception <= rstexn;
+                                stage <= exception_handle;
+                            elsif(class = DP) then
                                 -- DP instructions complete here
                                 stage <= common_first;
                                 -- Instruction complete, set flow to done
@@ -644,10 +718,16 @@ begin
                             end if;
 
                         end if;
-                        -- Instruction complete, set flow to done
-                        flow <= done;
                         -- 'ldr' instruction complete here
-                        stage <= common_first;
+                        if (rst = '1') then
+                            -- RESET EXCEPTION CALLED
+                            exception <= rstexn;
+                            stage <= exception_handle;
+                        else
+                            stage <= common_first;
+                            -- Instruction complete, set flow to done
+                            flow <= done;
+                        end if;
                    
                    when others => 
                             -- Should not be reached

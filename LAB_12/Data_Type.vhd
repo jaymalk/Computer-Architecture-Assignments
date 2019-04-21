@@ -10,11 +10,13 @@ package data_type is
 
     -- Data type for Instruction Type
     type instruction_class is
-        (DP, DT, MUL, branch, unknown);
+        (SWI, DP, DT, MUL, branch, unknown);
 
     -- Data type for decoded instruction in ALU
     type instruction_type is
     (
+        -- SWI
+        swi,
         -- DP
         not_nand, eor, sub, rsb, add, adc, sbc, rsc, tst, teq, cmp, cmn, orr, mov, bic, mvn,
         -- MUL
