@@ -61,6 +61,8 @@ begin
     command_class_out <= command_class;
 
     command_class <= 
+                -- PSR
+                PSR when (instruction(27 downto 23) = "00010" and (instruction(21 downto 4) = "101001111100000000" or (instruction(21 downto 16) = "001111" and instruction(11 downto 0) = "000000000000"))) else
                 -- SWI
                 SWI when (instruction(27 downto 24) = "1111") else
                 -- MUL
@@ -74,7 +76,11 @@ begin
                 -- Unknown
                 unknown;
 
-    command <=  -- SWI
+    command <=  
+                -- PSR
+                mrs when (command_class = PSR and instruction(21) = '0') else
+                msr when (command_class = PSR and instruction(21) = '1') else
+                -- SWI
                 swi when (command_class = SWI) else
                 -- MUL
                 mul when (instruction(27 downto 22) = "000000" and instruction(7 downto 4) = "1001" and instruction(21) = '0' and command_class = MUL) else

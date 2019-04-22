@@ -226,14 +226,14 @@ begin
     Load_Store <= instruction(20);
 
     -- RN, RM and RD (register addresses)
-    RN <= "10001" when instruction(19 downto 16) = "1110" and state = svc else
-          "10010" when instruction(19 downto 16) = "1101" and state = svc else
+    RN <= "10001" when instruction(19 downto 16) = "1101" and state = svc else
+          "10010" when instruction(19 downto 16) = "1110" and state = svc else
           '0' & instruction(19 downto 16);
-    RD <= "10001" when instruction(15 downto 12) = "1110" and state = svc else
-          "10010" when instruction(15 downto 12) = "1101" and state = svc else
+    RD <= "10001" when instruction(15 downto 12) = "1101" and state = svc else
+          "10010" when instruction(15 downto 12) = "1110" and state = svc else
           '0' & instruction(15 downto 12);
-    RM <= "10001" when instruction(3 downto 0) = "1110" and state = svc else
-          "10010" when instruction(3 downto 0) = "1101" and state = svc else
+    RM <= "10001" when instruction(3 downto 0) = "1101" and state = svc else
+          "10010" when instruction(3 downto 0) = "1110" and state = svc else
           '0' & instruction(3 downto 0);
     RS <= '0' & instruction(11 downto 8);
 
@@ -472,6 +472,27 @@ begin
                                 stage <= exception_handle;
                             elsif (class = DP or ((current_ins = ldr or current_ins = str or current_ins = ldrb or current_ins = strb) and  Immediate = '1') ) then
                                 stage <= shift_stage;
+                            elsif (class = PSR) then
+                                -- Handling and completing PSR command in this step only
+                                stage <= common_first;
+                                flow <= done;
+                                if (current_ins = mrs) then
+                                    if(instruction(22) = '0') then
+                                        RF(to_integer(unsigned(RD))) <= CPSR;
+                                    else 
+                                        RF(to_integer(unsigned(RD))) <= SPSR;
+                                    end if;
+                                elsif (current_ins = msr) then
+                                    if(state = svc) then
+                                        if(instruction(22) = '0') then
+                                            CPSR <= RF(to_integer(unsigned(RM)));
+                                        else
+                                            SPSR <= RF(to_integer(unsigned(RM)));
+                                        end if;
+                                    else
+                                        CPSR(31 downto 28) <= RF(to_integer(unsigned(RM)))(31 downto 28);
+                                    end if;
+                                end if;
                             else
                                 stage <= third;
                             end if;
