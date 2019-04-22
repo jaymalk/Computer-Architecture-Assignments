@@ -69,13 +69,13 @@ architecture Behavioral of CPU_MULTI is
     signal A, B : std_logic_vector(31 downto 0);
 
     -- Register File Data Type (0-15 usr, 16 - CPSR, 17 - R13_svc, 18 - R14_svc, 19 SPSR_svc)
-    signal RFF: register_file_datatype;
+    signal RFF: complete_file;
     alias CPSR      : std_logic_vector(31 downto 0) is RFF(16);
     alias R13_svc   : std_logic_vector(31 downto 0) is RFF(17);
     alias R14_svc   : std_logic_vector(31 downto 0) is RFF(18);
     alias SPSR_svc  : std_logic_vector(31 downto 0) is RFF(19);
-    
-    signal RF : register_file_datatype;
+    -- The actual (and usable) register file
+    signal RF : register_file;
 
     -- Signal represting the program counter (PC)
     signal PC: integer := 0;
@@ -209,8 +209,8 @@ begin
              unknown;
              
     -- Setting register files with respect to current mode
-    RF(15 downto 0) <= RFF(15 downto 0) when state = usr else
-                        RFF(15) & RF(18 downto 17) & RFF(12 downto 0);
+    RF <= register_file(RFF(15 downto 0)) when state = usr else
+          register_file(RFF(15) & RF(18 downto 17) & RFF(12 downto 0));
     
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);

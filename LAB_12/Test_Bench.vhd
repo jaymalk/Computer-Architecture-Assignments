@@ -13,8 +13,8 @@ entity TestBench is
             -- Program Select, 4 bit vector to decide for programs
             Program_Select : in std_logic_vector(2 downto 0);
             -- Buttons for control
-            Reset_Button, Step_Button, Go_Button, Instr_Button: in std_logic;
-            -- ? WTF
+            Reset_Button, Step_Button, Go_Button, Instr_Button, IRQ_Button, RST_Button: in std_logic;
+            -- Register Status
             lur : in std_logic; --LoadUpperRegisterForOutput
             -- Specifying the reister number
             register_number: in std_logic_vector(3 downto 0);
@@ -31,7 +31,7 @@ architecture Behavioral of TestBench is
     signal reset : std_logic;
 
     -- Signal for step, go, instr response, for the testing FSM
-    signal step, go, instr : std_logic := '0';
+    signal step, go, instr, irq, rst : std_logic := '0';
 
     -- Slower clock for debouncing
     signal slow_clock : std_logic;
@@ -130,6 +130,8 @@ architecture Behavioral of TestBench is
                 PC_Start: in integer;
                     -- Variables which handle user input for testing FSM
                 step, go, instr: in std_logic;
+                    -- External Exception Handle (IRQ and RESET)
+                irq, rst : in std_logic;
     
                 -- Output Parameters
                     -- Address to be sent to instruction memory to get Instruction (PC is sent)
@@ -181,6 +183,10 @@ begin
         Go_Component: entity  work.debouncer(architecture_debouncer) port map(Go_Button, slow_clock, go);
         -- Instr button
         Instr_Component: entity  work.debouncer(architecture_debouncer) port map(Instr_Button, slow_clock, instr);
+        -- IRQ button
+        Instr_Component: entity  work.debouncer(architecture_debouncer) port map(IRQ_Button, slow_clock, irq);
+        -- RST button
+        Instr_Component: entity  work.debouncer(architecture_debouncer) port map(RST_Button, slow_clock, rst);
 
 ------------------------------------------------------------
 -- CPU COMPONENTS 
@@ -206,6 +212,9 @@ begin
             step => step,
             go => go,
             instr => instr,
+            -- Exceptions
+            irq => irq,
+            rst => rst,
         -- Output Parameters
             -- Address to IM
             Address_To_IM => Address_To_IM,

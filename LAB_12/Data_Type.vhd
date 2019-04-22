@@ -5,8 +5,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 package data_type is
 
     -- Data type for Register File
-    type register_file_datatype is
-        array(0 to 19) of std_logic_vector(31 downto 0);
+    type general_file is array(natural range<>) of std_logic_vector(31 downto 0);
+    subtype complete_file is general_file(19 downto 0);
+    subtype register_file is general_file(15 downto 0);
 
     -- Data type for Instruction Type
     type instruction_class is
