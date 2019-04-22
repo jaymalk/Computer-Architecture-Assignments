@@ -192,8 +192,8 @@ architecture Behavioral of CPU_MULTI is
     signal result_from_ALU : std_logic_vector(31 downto 0);
 
     -- EXCEPTIONS (Datatypes and signals for working with exceptions)
-    type state_access is (usr, svc, unknown);
-    signal state : state_access := unknown;
+    type state_access is (usr, svc);
+    signal state : state_access := svc;
     type exception_type is (rstexn, undexn, swiexn, irqexn, noexn);
     signal exception : exception_type := noexn;
     signal irq, rst : std_logic := '0';
@@ -210,8 +210,7 @@ begin
     
     -- Setting state w.r.t mode bits
     state <= usr when mode = "10000" else
-             svc when mode = "10011" else
-             unknown;
+             svc when mode = "10011";
     
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);
@@ -412,11 +411,11 @@ begin
                         if (exception = rstexn) then 
                             RF(15) <= "00000000000000000000000000000000";
                         elsif (exception = undexn) then
-                            RF(15) <= "00000000000000000000000000000100";
+                            RF(15) <= "00000000000000000000000000000001";
                         elsif (exception = swiexn) then
-                            RF(15) <= "00000000000000000000000000001000";
+                            RF(15) <= "00000000000000000000000000000010";
                         else -- irqexn
-                            RF(15) <= "00000000000000000000000000010010";
+                            RF(15) <= "00000000000000000000000000000110";
                         end if;
                         -- Starting again
                         stage <= common_first;
@@ -606,7 +605,7 @@ begin
                                 end if;
                                 
                             elsif(class = DT)then
-                                if (state = usr and to_integer(unsigned((result_from_ALU(31 downto 2))) < 256)) then
+                                if (state = usr and (result_from_ALU(31 downto 0) < "00000000000000000000010000000000")) then
                                     -- Preventing access to protected memory by a user
                                     stage <= common_first;
                                     flow <= done;

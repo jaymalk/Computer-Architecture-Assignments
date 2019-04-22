@@ -98,10 +98,10 @@ begin
                 adc when (opcode = "0101" and command_class = DP) else
                 sbc when (opcode = "0110" and command_class = DP) else
                 rsc when (opcode = "0111" and command_class = DP) else
-                tst when (opcode = "1000" and command_class = DP) else
-                teq when (opcode = "1001" and command_class = DP) else
-                cmp when (opcode = "1010" and command_class = DP) else
-                cmn when (opcode = "1011" and command_class = DP) else
+                tst when (opcode = "1000" and instruction(15 downto 12) = "0000" and command_class = DP) else
+                teq when (opcode = "1001" and instruction(15 downto 12) = "0000" and command_class = DP) else
+                cmp when (opcode = "1010" and instruction(15 downto 12) = "0000" and command_class = DP) else
+                cmn when (opcode = "1011" and instruction(15 downto 12) = "0000" and command_class = DP) else
                 orr when (opcode = "1100" and command_class = DP) else
                 mov when (opcode = "1101" and command_class = DP) else
                 bic when (opcode = "1110" and command_class = DP) else

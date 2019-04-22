@@ -31,7 +31,7 @@ run 10ns
 
 # Program Select
 # Enter the program no. in place
-add_force {/TestBench/Program_Select} -radix bin {011 0ns}
+add_force {/TestBench/Program_Select} -radix bin {000 0ns}
 add_force {/TestBench/reset} -radix bin {1 10ns}
 run 20ns
 add_force {/TestBench/reset} -radix bin {0 50ns}
