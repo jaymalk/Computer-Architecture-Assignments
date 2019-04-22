@@ -193,7 +193,7 @@ architecture Behavioral of CPU_MULTI is
 
     -- EXCEPTIONS (Datatypes and signals for working with exceptions)
     type state_access is (usr, svc, unknown);
-    signal state : state_access := svc;
+    signal state : state_access := unknown;
     type exception_type is (rstexn, undexn, swiexn, irqexn, noexn);
     signal exception : exception_type := noexn;
     signal irq, rst : std_logic := '0';
@@ -210,7 +210,8 @@ begin
     
     -- Setting state w.r.t mode bits
     state <= usr when mode = "10000" else
-             svc;
+             svc when mode = "10011" else
+             unknown;
     
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);
@@ -605,8 +606,11 @@ begin
                                 end if;
                                 
                             elsif(class = DT)then
-                            
-                                if((current_ins = ldr) or (current_ins = ldrh) or (current_ins = ldrb) or (current_ins = ldrsb) or (current_ins = ldrsh)) then
+                                if (state = usr and to_integer(unsigned((result_from_ALU(31 downto 2))) < 256)) then
+                                    -- Preventing access to protected memory by a user
+                                    stage <= common_first;
+                                    flow <= done;
+                                elsif((current_ins = ldr) or (current_ins = ldrh) or (current_ins = ldrb) or (current_ins = ldrsb) or (current_ins = ldrsh)) then
                                     -- 'ldr' instruction goes to stage five
                                     stage <= fifth_ldr;
                                     Address_To_DM <= to_integer(unsigned((result_from_ALU(31 downto 2))))*4;
