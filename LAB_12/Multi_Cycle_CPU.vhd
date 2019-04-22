@@ -586,6 +586,11 @@ begin
                                         end if;
                                     end if;
                                 end if;
+                                -- E[1B0F00E] (movs pc lr), This command in 'svc' leads us to 'usr' state
+                                if(state = svc and instruction(27 downto 0)="0001101100001111000000001110")
+                                    state <= usr;
+                                    CPSR <= SPSR_svc;
+                                end if;
                             
                             elsif(class = MUL) then
                                 stage <= common_first;
