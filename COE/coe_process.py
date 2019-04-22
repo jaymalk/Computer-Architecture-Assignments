@@ -8,7 +8,7 @@ def main():
         exit(2)
     name = sys.argv[1]
     with open(name, "r+") as _f:
-        _fl = [open(str(i)+"_"+name, "w+") for i in range(4)]
+        _fl = [open(name.rstrip('.coe')+"_"+str(i)+'.coe', "w+") for i in range(4)]
         l1 = _f.readline()
         l2 = _f.readline()
         for file in _fl:
@@ -17,8 +17,10 @@ def main():
             line = _f.readline()
             if line == '' or line == ';':
                 break
-            enc = line.split(',')[:4]
+            enc = line.split(',')
             for code in enc:
+                if code == '' or code == '\n':
+                    continue
                 _fl[3].write(code[:2]+',')
                 _fl[2].write(code[2:4]+',')
                 _fl[1].write(code[4:6]+',')
