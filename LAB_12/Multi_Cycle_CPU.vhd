@@ -480,14 +480,14 @@ begin
                                     if(instruction(22) = '0') then
                                         RF(to_integer(unsigned(RD))) <= CPSR;
                                     else 
-                                        RF(to_integer(unsigned(RD))) <= SPSR;
+                                        RF(to_integer(unsigned(RD))) <= SPSR_svc;
                                     end if;
                                 elsif (current_ins = msr) then
                                     if(state = svc) then
                                         if(instruction(22) = '0') then
                                             CPSR <= RF(to_integer(unsigned(RM)));
                                         else
-                                            SPSR <= RF(to_integer(unsigned(RM)));
+                                            SPSR_svc <= RF(to_integer(unsigned(RM)));
                                         end if;
                                     else
                                         CPSR(31 downto 28) <= RF(to_integer(unsigned(RM)))(31 downto 28);
