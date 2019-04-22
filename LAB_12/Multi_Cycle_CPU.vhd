@@ -16,7 +16,7 @@ entity CPU_MULTI is
                 -- Variables which handle user input for testing FSM
             step, go, instr: in std_logic;
                 -- External Exception Handle (IRQ and RESET)
-            irq, rst : in std_logic;
+            irq_in, rst_in : in std_logic;
 
             -- Output Parameters
                 -- Address to be sent to instruction memory to get Instruction (PC is sent)
@@ -28,7 +28,7 @@ entity CPU_MULTI is
                 -- Deciding for write and fetch from data memory
             Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3: out std_logic;
                 -- dummy RF to be used outside
-            RF_For_Display: out register_file_datatype
+            RF_For_Display: out register_file
           );
 end entity;
 
@@ -60,7 +60,7 @@ architecture Behavioral of CPU_MULTI is
     signal call_ldr : std_logic := '0';
 
     -- Signal for current and destination registers
-    signal RD, RN, RS, RM: std_logic_vector(3 downto 0);
+    signal RD, RN, RS, RM: std_logic_vector(4 downto 0);
 
     -- Value associated with the third operand (RM or llM)
     signal RM_val, shift_val: std_logic_vector(31 downto 0);
@@ -69,13 +69,11 @@ architecture Behavioral of CPU_MULTI is
     signal A, B : std_logic_vector(31 downto 0);
 
     -- Register File Data Type (0-15 usr, 16 - CPSR, 17 - R13_svc, 18 - R14_svc, 19 SPSR_svc)
-    signal RFF: complete_file;
-    alias CPSR      : std_logic_vector(31 downto 0) is RFF(16);
-    alias R13_svc   : std_logic_vector(31 downto 0) is RFF(17);
-    alias R14_svc   : std_logic_vector(31 downto 0) is RFF(18);
-    alias SPSR_svc  : std_logic_vector(31 downto 0) is RFF(19);
-    -- The actual (and usable) register file
-    signal RF : register_file;
+    signal RF: complete_file := (others => (others => '0'));
+    alias CPSR      : std_logic_vector(31 downto 0) is RF(16);
+    alias R13_svc   : std_logic_vector(31 downto 0) is RF(17);
+    alias R14_svc   : std_logic_vector(31 downto 0) is RF(18);
+    alias SPSR_svc  : std_logic_vector(31 downto 0) is RF(19);
 
     -- Signal represting the program counter (PC)
     signal PC: integer := 0;
@@ -198,19 +196,22 @@ architecture Behavioral of CPU_MULTI is
     signal state : state_access := unknown;
     type exception_type is (rstexn, undexn, swiexn, irqexn, noexn);
     signal exception : exception_type := noexn;
+    signal irq, rst : std_logic := '0';
 
 begin
 
     -- Concurrent assignment of the signals from positions in the instruction (preserved one) --
+
+    -- Setting irq and rst, from input parameters
+    irq <= '0' when irq_in = 'U' else
+            irq_in;
+    rst <= '0' when rst_in = 'U' else
+            rst_in;
     
     -- Setting state w.r.t mode bits
     state <= usr when mode = "10000" else
              svc when mode = "10011" else
              unknown;
-             
-    -- Setting register files with respect to current mode
-    RF <= register_file(RFF(15 downto 0)) when state = usr else
-          register_file(RFF(15) & RF(18 downto 17) & RFF(12 downto 0));
     
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);
@@ -224,14 +225,17 @@ begin
     Write_Back <= instruction(21);
     Load_Store <= instruction(20);
 
-    -- Write enable with concurrent assignment from Load_Store
-    -- Write_Enable <= not Load_Store;
-
-    -- RN and RD (register address)
-    RN <= instruction(19 downto 16);
-    RD <= instruction(15 downto 12);
-    RS <= instruction(11 downto 8);
-    RM <= instruction(3 downto 0);
+    -- RN, RM and RD (register addresses)
+    RN <= "10001" when instruction(19 downto 16) = "1110" and state = svc else
+          "10010" when instruction(19 downto 16) = "1101" and state = svc else
+          '0' & instruction(19 downto 16);
+    RD <= "10001" when instruction(15 downto 12) = "1110" and state = svc else
+          "10010" when instruction(15 downto 12) = "1101" and state = svc else
+          '0' & instruction(15 downto 12);
+    RM <= "10001" when instruction(3 downto 0) = "1110" and state = svc else
+          "10010" when instruction(3 downto 0) = "1101" and state = svc else
+          '0' & instruction(3 downto 0);
+    RS <= '0' & instruction(11 downto 8);
 
     -- Shift specification and opcodes
     Shift <= instruction(11 downto 4);
@@ -254,27 +258,27 @@ begin
     RM_val <=
             -- DP instruction
                 -- Third operand is Register
-                RF(to_integer(unsigned(instruction(3 downto 0))))   when (class = DP and Immediate='0') else
+                RF(to_integer(unsigned(RM)))   when (class = DP and Immediate='0') else
                 -- Third operand is a vector offset
                 "000000000000000000000000" & instruction(7 downto 0)    when (class = DP and Immediate='1') else
             -- DT instruction (F = "00") (PLEASE REVIEW U=0)
                 -- Offset is complete and added
-                "000000000000000000000000" & instruction(11 downto 8) & instruction(3 downto 0) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '1') else
+                "000000000000000000000000" & instruction(11 downto 8) & RM(3 downto 0) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '1') else
                 -- Offset is complete and subtracted
-                std_logic_vector(unsigned(not ("00000000000000000000" & instruction(11 downto 8) & instruction(3 downto 0))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '0') else
+                std_logic_vector(unsigned(not ("00000000000000000000" & instruction(11 downto 8) & RM(3 downto 0))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (class = DT and F_Class = "00" and Byte = '1' and Up_Down = '0') else
                 -- Offset is register based and added
-                RF(to_integer(unsigned(instruction(3 downto 0)))) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '1') else
+                RF(to_integer(unsigned(RM))) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '1') else
                 -- Offset is register based and subtracted (review below)
-                std_logic_vector(unsigned(NOT RF(to_integer(unsigned(instruction(3 downto 0))))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '0') else
+                std_logic_vector(unsigned(NOT RF(to_integer(unsigned(RM)))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (class = DT and F_Class = "00" and Byte = '0' and Up_Down = '0') else
             -- DT instruction (original)
                 -- Offset is complete and added
                 "00000000000000000000" & instruction(11 downto 0) when (F_Class = "01" and Up_Down='1' and Immediate = '0') else
                 -- Offset is complete and subtracted
                 std_logic_vector(unsigned(not ("00000000000000000000" & instruction(11 downto 0))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (F_Class = "01" and Up_Down='0' and Immediate = '0') else
                 -- Offset is register based and added
-                RF(to_integer(unsigned(instruction(3 downto 0)))) when (F_Class = "01" and Up_Down='1' and Immediate = '1') else
+                RF(to_integer(unsigned(RM))) when (F_Class = "01" and Up_Down='1' and Immediate = '1') else
                 -- Offset is register based and subtracted (review below)
-                std_logic_vector(unsigned(NOT RF(to_integer(unsigned(instruction(3 downto 0))))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (F_Class = "01" and Up_Down='0' and Immediate = '1') else
+                std_logic_vector(unsigned(NOT RF(to_integer(unsigned(RM)))) + unsigned(std_logic_vector(to_unsigned(1, 32)))) when (F_Class = "01" and Up_Down='0' and Immediate = '1') else
             -- Branch instruction
                 -- Arithmetic shift (& multiplied by 4) | Positive Jump
                 "000000" & instruction(23 downto 0) & "00"  when (F_Class = "10" and instruction(23) = '0') else
@@ -366,7 +370,8 @@ begin
     -- Linking signals with OUTPUT values.
     PC <= to_integer(unsigned(RF(15)));
     Address_To_IM <= PC;
-    RF_For_Display <= RF;
+    RF_For_Display <= register_file(RF(15) & RF(18 downto 17) & RF(12 downto 0)) when state = svc else
+                      register_file(RF(15 downto 0));
 
     -- Dividing the data components byte-wise
     Data_From_DM_3 <= Data_From_DM(31 downto 24);
@@ -381,6 +386,7 @@ begin
         -- MAIN WORKING FOR THE CPU (ALU)
     process(main_clock)
     begin
+
         ------------------------------------------
         -- CPU FSM
             if(reset='1') then

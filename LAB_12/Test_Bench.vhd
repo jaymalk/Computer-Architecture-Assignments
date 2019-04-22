@@ -54,7 +54,7 @@ architecture Behavioral of TestBench is
     signal DM_Address, IM_Address : std_logic_vector(7 downto 0);
 
     -- For display
-    signal RF_For_Display: register_file_datatype;
+    signal RF_For_Display: register_file;
 
     -- Program selector
     signal PC_Start: integer := 0;
@@ -131,7 +131,7 @@ architecture Behavioral of TestBench is
                     -- Variables which handle user input for testing FSM
                 step, go, instr: in std_logic;
                     -- External Exception Handle (IRQ and RESET)
-                irq, rst : in std_logic;
+                irq_in, rst_in : in std_logic;
     
                 -- Output Parameters
                     -- Address to be sent to instruction memory to get Instruction (PC is sent)
@@ -143,7 +143,7 @@ architecture Behavioral of TestBench is
                     -- Deciding for write and fetch from data memory
                 Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3: out std_logic;
                     -- dummy RF to be used outside
-                RF_For_Display: out register_file_datatype
+                RF_For_Display: out register_file
               );
     end component;
     
@@ -184,9 +184,9 @@ begin
         -- Instr button
         Instr_Component: entity  work.debouncer(architecture_debouncer) port map(Instr_Button, slow_clock, instr);
         -- IRQ button
-        Instr_Component: entity  work.debouncer(architecture_debouncer) port map(IRQ_Button, slow_clock, irq);
+        IRQ_Component: entity  work.debouncer(architecture_debouncer) port map(IRQ_Button, slow_clock, irq);
         -- RST button
-        Instr_Component: entity  work.debouncer(architecture_debouncer) port map(RST_Button, slow_clock, rst);
+        RST_Component: entity  work.debouncer(architecture_debouncer) port map(RST_Button, slow_clock, rst);
 
 ------------------------------------------------------------
 -- CPU COMPONENTS 
@@ -213,8 +213,8 @@ begin
             go => go,
             instr => instr,
             -- Exceptions
-            irq => irq,
-            rst => rst,
+            irq_in => irq,
+            rst_in => rst,
         -- Output Parameters
             -- Address to IM
             Address_To_IM => Address_To_IM,
