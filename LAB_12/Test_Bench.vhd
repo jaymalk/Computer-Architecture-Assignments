@@ -51,7 +51,7 @@ architecture Behavioral of TestBench is
     signal Instruction_From_IM_0, Instruction_From_IM_1, Instruction_From_IM_2, Instruction_From_IM_3: std_logic_vector(7 downto 0);
 
     -- Address to program and data memory
-    signal DM_Address, IM_Address : std_logic_vector(7 downto 0);
+    signal DM_Address, IM_Address : std_logic_vector(9 downto 0);
 
     -- For display
     signal RF_For_Display: register_file;
@@ -62,61 +62,50 @@ architecture Behavioral of TestBench is
     -- Component representing the data memory 
         -- Needs 4 different copies for working with different COE's
     component Memory_0
-      port (
-        a : in STD_LOGIC_VECTOR(7 downto 0);
-        d : in STD_LOGIC_VECTOR(7 downto 0);
-        dpra : in STD_LOGIC_VECTOR(7 downto 0);
-        clk : in STD_LOGIC;
-        we : in STD_LOGIC;
-        spo : out STD_LOGIC_VECTOR(7 downto 0);
-        dpo : out STD_LOGIC_VECTOR(7 downto 0)
+      PORT (
+        a : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+        d : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dpra : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+        clk : IN STD_LOGIC;
+        we : IN STD_LOGIC;
+        spo : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dpo : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
       );
     end component;
     component Memory_1
-      port (
-        a : in STD_LOGIC_VECTOR(7 downto 0);
-        d : in STD_LOGIC_VECTOR(7 downto 0);
-        dpra : in STD_LOGIC_VECTOR(7 downto 0);
-        clk : in STD_LOGIC;
-        we : in STD_LOGIC;
-        spo : out STD_LOGIC_VECTOR(7 downto 0);
-        dpo : out STD_LOGIC_VECTOR(7 downto 0)
+      PORT (
+        a : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+        d : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dpra : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+        clk : IN STD_LOGIC;
+        we : IN STD_LOGIC;
+        spo : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dpo : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
       );
     end component;
     component Memory_2
-      port (
-        a : in STD_LOGIC_VECTOR(7 downto 0);
-        d : in STD_LOGIC_VECTOR(7 downto 0);
-        dpra : in STD_LOGIC_VECTOR(7 downto 0);
-        clk : in STD_LOGIC;
-        we : in STD_LOGIC;
-        spo : out STD_LOGIC_VECTOR(7 downto 0);
-        dpo : out STD_LOGIC_VECTOR(7 downto 0)
+      PORT (
+        a : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+        d : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dpra : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+        clk : IN STD_LOGIC;
+        we : IN STD_LOGIC;
+        spo : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dpo : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
       );
     end component;
     component Memory_3
-      port (
-        a : in STD_LOGIC_VECTOR(7 downto 0);
-        d : in STD_LOGIC_VECTOR(7 downto 0);
-        dpra : in STD_LOGIC_VECTOR(7 downto 0);
-        clk : in STD_LOGIC;
-        we : in STD_LOGIC;
-        spo : out STD_LOGIC_VECTOR(7 downto 0);
-        dpo : out STD_LOGIC_VECTOR(7 downto 0)
+      PORT (
+        a : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+        d : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dpra : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+        clk : IN STD_LOGIC;
+        we : IN STD_LOGIC;
+        spo : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+        dpo : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
       );
     end component;
 
-
-
-    
-    -- Component representing the instruction memory
-    component ProgramMemory
-      port (
-        a : in STD_LOGIC_VECTOR(7 downto 0);
-        spo : out STD_LOGIC_VECTOR(31 downto 0)
-      );
-    end component;
-    
     -- Componenet representing the multi-cycle CPU
     component CPU_MULTI is
         Port (
@@ -238,7 +227,7 @@ begin
 
         -- DATA RELATED COMPONENTS
     -- Concurrent assignement of DM_Address(8 bit vector), from Address_To_DM (integer)
-    DM_Address <= std_logic_vector(to_unsigned(Address_To_DM, 8));
+    DM_Address <= std_logic_vector(to_unsigned((Address_To_DM/4), 10));
     -- Getting indiviual bytes from main data
     Data_To_DM_3 <= Data_To_DM(31 downto 24);
     Data_To_DM_2 <= Data_To_DM(23 downto 16);
@@ -249,7 +238,7 @@ begin
 
         -- INSTRUCTION RELATED COMPONENTS
     -- Concurrent assignement of IM_Address(8 bit vector), from Address_To_IM (integer)
-    IM_Address <= std_logic_vector(to_unsigned(Address_To_IM, 8));
+    IM_Address <= std_logic_vector(to_unsigned(Address_To_IM, 10));
     -- Settng data memory component from individual bytes
     Instruction_From_IM <= Instruction_From_IM_3 & Instruction_From_IM_2 & Instruction_From_IM_1 & Instruction_From_IM_0 ; 
 

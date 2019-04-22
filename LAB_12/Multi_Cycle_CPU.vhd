@@ -193,7 +193,7 @@ architecture Behavioral of CPU_MULTI is
 
     -- EXCEPTIONS (Datatypes and signals for working with exceptions)
     type state_access is (usr, svc, unknown);
-    signal state : state_access := unknown;
+    signal state : state_access := svc;
     type exception_type is (rstexn, undexn, swiexn, irqexn, noexn);
     signal exception : exception_type := noexn;
     signal irq, rst : std_logic := '0';
@@ -210,8 +210,7 @@ begin
     
     -- Setting state w.r.t mode bits
     state <= usr when mode = "10000" else
-             svc when mode = "10011" else
-             unknown;
+             svc;
     
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);
