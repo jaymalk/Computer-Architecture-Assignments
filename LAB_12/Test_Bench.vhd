@@ -13,13 +13,13 @@ entity TestBench is
             -- Program Select, 4 bit vector to decide for programs
             Program_Select : in std_logic_vector(2 downto 0);
             -- Buttons for control
-            Reset_Button, Step_Button, Go_Button, Instr_Button, IRQ_Button, RST_Button: in std_logic;
+            Reset_Button, Step_Button, Go_Button, Instr_Button, IRQ_Button, RST_Button: in std_logic := '0';
             -- Register Status
-            lur : in std_logic; --LoadUpperRegisterForOutput
+            lur : in std_logic := '0'; --Load Upper Register For Output
             -- Specifying the reister number
-            register_number: in std_logic_vector(3 downto 0);
+            register_number: in std_logic_vector(3 downto 0) := "0000";
         -- Output
-            LED_Output : out std_logic_vector(15 downto 0)
+            LED_Output : out std_logic_vector(15 downto 0) := "0000000000000000"
         );
 end TestBench;
 

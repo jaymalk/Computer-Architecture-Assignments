@@ -7,7 +7,7 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 entity debouncer is
   Port (
         input_value, slow_clock: in std_logic;
-        output_value: out std_logic 
+        output_value: out std_logic := '0' 
        );
 end debouncer;
 
