@@ -58,7 +58,7 @@ architecture Behavioral of TestBench is
     signal RF_For_Display: register_file;
 
     -- Mediator signals for LED_Output
-    signal LED_Select : std_logic_vector(16 downto 0) := "0000000000000000";
+    signal LED_Select : std_logic_vector(15 downto 0) := "0000000000000000";
 
     -- Component representing the data memory 
         -- Needs 4 different copies for working with different COE's
@@ -112,10 +112,10 @@ architecture Behavioral of TestBench is
         Port (
             -- Input Parameters
               clock: in std_logic;
-              value: in std_logic_vector(16 downto 0);
+              value: in std_logic_vector(15 downto 0);
             -- Output Parameters
-              output: out std_logic_vector(7 downto 0) := "0000000"
-              anode: out std_logic_vector(3 downto 0) := "0000"
+              outp: out std_logic_vector(6 downto 0);
+              anode: out std_logic_vector(3 downto 0)
              );
       end component;
       
@@ -170,10 +170,10 @@ begin
     Register_Value : display
         Port map (
             -- Input Parameters
-              clock: => test_clock,
-              value: => LED_Select,
+              clock => slow_clock,
+              value => LED_Select,
             -- Output Parameters
-              output => seg,
+              outp => seg,
               anode => an
              );
 
