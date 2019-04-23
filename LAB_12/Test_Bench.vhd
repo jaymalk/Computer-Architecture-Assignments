@@ -17,7 +17,13 @@ entity TestBench is
             -- Specifying the reister number
             register_number: in std_logic_vector(3 downto 0) := "0000";
         -- Output
-            LED_Output : out std_logic_vector(15 downto 0) := "0000000000000000"
+            -- LED outputs
+            LED_Output : out std_logic_vector(15 downto 0) := "0000000000000000";
+            -- Segmented Display outputs
+                -- Values
+            seg : out std_logic_vector(6 downto 0) := "0000000";
+                -- Anode sets
+            an : out std_logic_vector(3 downto 0) := "0000"
         );
 end TestBench;
 
@@ -50,6 +56,9 @@ architecture Behavioral of TestBench is
 
     -- For display
     signal RF_For_Display: register_file;
+
+    -- Mediator signals for LED_Output
+    signal LED_Select : std_logic_vector(16 downto 0) := "0000000000000000";
 
     -- Component representing the data memory 
         -- Needs 4 different copies for working with different COE's
@@ -98,6 +107,19 @@ architecture Behavioral of TestBench is
       );
     end component;
 
+    -- Seven segment display for showing the values of registers on diplay (in HEX)
+    component display is
+        Port (
+            -- Input Parameters
+              clock: in std_logic;
+              value: in std_logic_vector(16 downto 0);
+            -- Output Parameters
+              output: out std_logic_vector(7 downto 0) := "0000000"
+              anode: out std_logic_vector(3 downto 0) := "0000"
+             );
+      end component;
+      
+
     -- Componenet representing the multi-cycle CPU
     component CPU_MULTI is
         Port (
@@ -137,10 +159,24 @@ begin
     irq <= IRQ_Switch;
     
     -- Selecting visible output
-    with lur select LED_Output <=
+    with lur select LED_Select <=
         RF_For_Display(to_integer(unsigned(register_number)))(31 downto 16) when '1',
         RF_For_Display(to_integer(unsigned(register_number)))(15 downto 0) when others;
-      
+    -- Assigning from holder
+    LED_Output <= LED_Select;
+
+------------------------------------------------------------
+    -- Mapping the segmented-display register
+    Register_Value : display
+        Port map (
+            -- Input Parameters
+              clock: => test_clock,
+              value: => LED_Select,
+            -- Output Parameters
+              output => seg,
+              anode => an
+             );
+
 ------------------------------------------------------------
     -- Mapping the parameters of Clock divider
     SLOW: clock_divider
