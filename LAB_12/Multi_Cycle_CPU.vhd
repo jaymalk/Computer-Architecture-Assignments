@@ -209,7 +209,7 @@ begin
     -- Setting state w.r.t mode bits
     state <= usr when mode = "10000" else
              svc when mode = "10011";
-    
+                 
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);
     F_Class <= instruction(27 downto 26);
@@ -478,6 +478,9 @@ begin
                                     if(state = svc) then
                                         if(instruction(22) = '0') then
                                             CPSR <= RF(to_integer(unsigned(RM)));
+                                            if(RF(to_integer(unsigned(RM)))(4 downto 0) = "10000") then
+                                                exception <= noexn;
+                                            end if;
                                         else
                                             SPSR_svc <= RF(to_integer(unsigned(RM)));
                                         end if;
@@ -588,6 +591,7 @@ begin
                                 -- E[1B0F00E] (movs pc lr), This command in 'svc' leads us to 'usr' state
                                 if(state = svc and instruction(27 downto 0)="0001101100001111000000001110") then
                                     CPSR <= SPSR_svc;
+                                    exception <= noexn;
                                 end if;
                             
                             elsif(class = MUL) then
