@@ -417,8 +417,9 @@ begin
                         else -- irqexn
                             RF(15) <= "00000000000000000000000000000110";
                         end if;
-                        -- Starting again
+                        -- Starting again and settting flow to done stage
                         stage <= common_first;
+                        flow <= done;
                         
                     -- First stage (Common in all)
                     when common_first =>
@@ -542,7 +543,13 @@ begin
                                 -- Branch instructions complete here (go to common stage)
                                 stage <= common_first;
                                 -- If link register is to be set then, (PC) is sent to R14
-                                RF(14) <= std_logic_vector(to_unsigned(PC, 32));
+                                if(current_ins = bl) then
+                                    if(state = usr) then
+                                        RF(14) <= std_logic_vector(to_unsigned(PC, 32));
+                                    else
+                                        R14_svc <= std_logic_vector(to_unsigned(PC, 32));
+                                    end if;
+                                end if;
                                 -- Branch instruction executes on predicate check only
                                 RF(15) <= std_logic_vector(to_unsigned(PC + 1 + (to_integer(signed(B))/4), 32));
                             -- Class is Unknown, return to Common_first
