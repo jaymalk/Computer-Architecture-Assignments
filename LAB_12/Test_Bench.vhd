@@ -10,10 +10,8 @@ entity TestBench is
         (
         -- Input parameters
             test_clock : in std_logic;
-            -- Program Select, 4 bit vector to decide for programs
-            Program_Select : in std_logic_vector(2 downto 0);
             -- Buttons for control
-            Reset_Button, Step_Button, Go_Button, Instr_Button, IRQ_Button, RST_Button: in std_logic := '0';
+            Step_Button, Go_Button, Instr_Button, IRQ_Switch, RST_Button: in std_logic := '0';
             -- Register Status
             lur : in std_logic := '0'; --Load Upper Register For Output
             -- Specifying the reister number
@@ -26,9 +24,6 @@ end TestBench;
 -- Architectuer for the testbench
 
 architecture Behavioral of TestBench is
-
-    -- Signal for reset, interacts with the reset button
-    signal reset : std_logic;
 
     -- Signal for step, go, instr response, for the testing FSM
     signal step, go, instr, irq, rst : std_logic := '0';
@@ -55,9 +50,6 @@ architecture Behavioral of TestBench is
 
     -- For display
     signal RF_For_Display: register_file;
-
-    -- Program selector
-    signal PC_Start: integer := 0;
 
     -- Component representing the data memory 
         -- Needs 4 different copies for working with different COE's
@@ -110,13 +102,11 @@ architecture Behavioral of TestBench is
     component CPU_MULTI is
         Port (
                 -- Input Parameters
-                main_clock, reset: in std_logic;
+                main_clock: in std_logic;
                     -- Instruction from instruction memory
                 Instruction_From_IM: in std_logic_vector(31 downto 0);
                     -- Data from data memory, to be used by str
                 Data_From_DM: in std_logic_vector(31 downto 0);
-                    -- Initialiser for PC for a program
-                PC_Start: in integer;
                     -- Variables which handle user input for testing FSM
                 step, go, instr: in std_logic;
                     -- External Exception Handle (IRQ and RESET)
@@ -143,7 +133,10 @@ architecture Behavioral of TestBench is
     end component;
 
 begin
+    -- Setting irq
+    irq <= IRQ_Switch;
     
+    -- Selecting visible output
     with lur select LED_Output <=
         RF_For_Display(to_integer(unsigned(register_number)))(31 downto 16) when '1',
         RF_For_Display(to_integer(unsigned(register_number)))(15 downto 0) when others;
@@ -164,25 +157,17 @@ begin
 -- BUTTONS
 
     -- Assigning the buttons their respective positions
-        -- Reset Button
-        Reset_Component: entity  work.debouncer(architecture_debouncer) port map(Reset_Button, slow_clock, reset);
         -- Step button
         Step_Component: entity  work.debouncer(architecture_debouncer) port map(Step_Button, slow_clock, step);
         -- Go button
         Go_Component: entity  work.debouncer(architecture_debouncer) port map(Go_Button, slow_clock, go);
         -- Instr button
         Instr_Component: entity  work.debouncer(architecture_debouncer) port map(Instr_Button, slow_clock, instr);
-        -- IRQ button
-        IRQ_Component: entity  work.debouncer(architecture_debouncer) port map(IRQ_Button, slow_clock, irq);
         -- RST button
         RST_Component: entity  work.debouncer(architecture_debouncer) port map(RST_Button, slow_clock, rst);
 
 ------------------------------------------------------------
 -- CPU COMPONENTS 
-
-    -- Determining thr program to work with (if initialsing is needed.)
-    PC_Start <= ((32) * to_integer(unsigned(Program_Select)));
-
     -- Mapping the parameters of CPU
     TheCPU: CPU_MULTI
         port map
@@ -190,9 +175,6 @@ begin
         -- Input Parameters
             -- clock and reset
             main_clock => test_clock,
-            reset => reset,
-            -- program select
-            PC_Start => PC_Start,
             -- Instruction from IM
             Instruction_From_IM => Instruction_From_IM,
             -- Data from DM

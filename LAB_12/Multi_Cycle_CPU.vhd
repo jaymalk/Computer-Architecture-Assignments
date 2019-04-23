@@ -6,13 +6,11 @@ use work.Data_Type.all;
 entity CPU_MULTI is
     Port (
             -- Input Parameters
-            main_clock, reset: in std_logic;
+            main_clock: in std_logic;
                 -- Instruction from instruction memory
             Instruction_From_IM: in std_logic_vector(31 downto 0);
                 -- Data from data memory, to be used by str
             Data_From_DM: in std_logic_vector(31 downto 0);
-                -- Initialiser for PC for a program
-            PC_Start: in integer;
                 -- Variables which handle user input for testing FSM
             step, go, instr: in std_logic;
                 -- External Exception Handle (IRQ and RESET)
@@ -387,13 +385,7 @@ begin
     begin
 
         ------------------------------------------
-        -- CPU FSM
-            if(reset='1') then
-                RF(15) <= std_logic_vector(to_unsigned(PC_Start, 32));
-                stage <= common_first;
-                flow <= initial;
-    
-            elsif(main_clock='1' and main_clock'event) then
+            if(main_clock='1' and main_clock'event) then
                 -- Deciding the current stage
                 case stage is
                 
@@ -781,22 +773,18 @@ begin
                                         flow <= onestep;
                                     elsif(instr = '1') then
                                         flow <= oneinstr;
-                                    elsif(reset = '1' or (step = '0' and go = '0' and instr = '0')) then
+                                    elsif(step = '0' and go = '0' and instr = '0')then
                                         flow <= initial;
                                     end if;
                 
                     when cont =>    if(instruction = "00000000000000000000000000000000") then
                                         flow <= done;
                                     -- The above instruction is always check before the third stage is executed, thus complying with ASM
-                                    elsif(reset = '1') then
-                                        flow <= initial;
                                     else
                                         flow <= cont;
                                     end if;
                 
-                    when oneinstr => if(reset='1') then
-                                        flow<= initial;
-                                     end if;
+                    when oneinstr => NULL;
                 
                     when onestep => flow<=done;
                 
@@ -804,8 +792,6 @@ begin
                                         flow <= initial;
                                     elsif(step = '1' or go = '1' or instr = '1') then
                                         flow <= done;
-                                    elsif(reset = '1') then
-                                        flow <= initial;
                                     end if;
                 end case;
     ------------------------------------------
