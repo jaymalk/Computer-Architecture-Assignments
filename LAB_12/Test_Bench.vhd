@@ -148,7 +148,7 @@ begin
         (
         -- Input parameters
             in_clock => test_clock,
-            reset => reset,
+            reset => rst,
         -- Output parameters
             slow_clock => slow_clock
         );
