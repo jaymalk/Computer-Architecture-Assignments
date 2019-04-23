@@ -28,33 +28,14 @@ architecture visual of display is
 begin
 
     -- Assigning values to anode
-    anodes <= "0001" when state = 0 else
-              "0010" when state = 1 else
-              "0100" when state = 2 else
-              "1000" when state = 3;
+    anodes <= "0001" when (state mod 4) = 0 else
+              "0010" when (state mod 4) = 1 else
+              "0100" when (state mod 4) = 2 else
+              "1000" when (state mod 4) = 3;
     anode <= anodes;
 
     -- Setting the correct register output for display
-    main <= digit(state);
-
-    -- Assigning the output value
-    outp <= "0000001" when main = "0000" else -- 0 
-        "1001111" when main = "0001" else -- 1 
-        "0010010" when main = "0010" else -- 2 
-        "0000110" when main = "0011" else -- 3 
-        "1001100" when main = "0100" else -- 4 
-        "0100100" when main = "0101" else -- 5 
-        "0100000" when main = "0110" else -- 6 
-        "0001111" when main = "0111" else -- 7 
-        "0000000" when main = "1000" else -- 8 
-        "0000100" when main = "1001" else -- 9 
-        "0000010" when main = "1010" else -- a
-        "1100000" when main = "1011" else -- b
-        "0110001" when main = "1100" else -- C
-        "1000010" when main = "1101" else -- d
-        "0110000" when main = "1110" else -- E
-        "0111000" when main = "1111";     -- F    
-
+    main <= digit(state mod 4);
     -- Value associated with each part
     digit(3) <= value(15 downto 12);
     digit(2) <= value(11 downto 8);
@@ -63,6 +44,26 @@ begin
 
     process(clock)
     begin
-        state <= ((state+1) mod 4);
+        if(clock'event and clock = '1') then
+            case main is
+                when "0000" => outp <=  "0000001";
+                when "0001" => outp <=  "1001111";
+                when "0010" => outp <=  "0010010";
+                when "0011" => outp <=  "0000110";
+                when "0100" => outp <=  "1001100";
+                when "0101" => outp <=  "0100100";
+                when "0110" => outp <=  "0100000";
+                when "0111" => outp <=  "0001111";
+                when "1000" => outp <=  "0000000";
+                when "1001" => outp <=  "0000100";
+                when "1010" => outp <=  "0000010";
+                when "1011" => outp <=  "1100000";
+                when "1100" => outp <=  "0110001";
+                when "1101" => outp <=  "1000010";
+                when "1110" => outp <=  "0110000";
+                when "1111" => outp <=  "0111000";
+            end case;
+            state <= ((state+1) rem 4);
+        end if;
     end process;
 end architecture visual;
