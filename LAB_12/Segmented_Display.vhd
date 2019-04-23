@@ -28,11 +28,20 @@ architecture visual of display is
 begin
 
     -- Assigning values to anode
-    anodes <= "0001" when state = 0 else
-              "0010" when state = 1 else
-              "0100" when state = 2 else
-              "1000" when state = 3;
+    anodes <= "1110" when state = 0 else
+              "1101" when state = 1 else
+              "1011" when state = 2 else
+              "0111" when state = 3;
     anode <= anodes;
+
+    -- Setting the correct register output for display
+    main <= digit(state);
+    
+    -- Value associated with each part
+    digit(3) <= value(15 downto 12);
+    digit(2) <= value(11 downto 8);
+    digit(1) <= value(7  downto 4);
+    digit(0) <= value(3  downto 0);
 
     process(clock)
     begin
@@ -57,13 +66,6 @@ begin
                 when others => outp <=  "1111111";
             end case;
             state <= ((state+1) rem 4);
-                -- Setting the correct register output for display
-            main <= digit(state);
-            -- Value associated with each part
-            digit(3) <= value(15 downto 12);
-            digit(2) <= value(11 downto 8);
-            digit(1) <= value(7  downto 4);
-            digit(0) <= value(3  downto 0);
         end if;
     end process;
 end architecture visual;

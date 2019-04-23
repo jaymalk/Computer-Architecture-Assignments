@@ -27,10 +27,10 @@ begin
     process(in_clock)
     begin  
         if(in_clock = '1' and in_clock'event) then
-            if(counter = 500000) then
+            if(counter = 50000) then
                 temp <= '0';
 		        counter <= counter+1;
-            elsif(counter = 1000000) then
+            elsif(counter = 100000) then
                 temp<= '1';
                 counter <= 0;
             else
