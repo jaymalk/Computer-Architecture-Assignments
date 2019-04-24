@@ -12,8 +12,13 @@ use ieee.std_logic_unsigned.all;
 
 -- Entity for a clock divider, for giving lower frequncy clocks.
 entity clock_divider is
-    port(in_clock, reset: in std_logic;
-        slow_clock: out std_logic);
+    port(
+        -- Input Parameters
+        in_clock, reset: in std_logic;
+        split: in integer;
+        -- Output Parameters
+        slow_clock: out std_logic
+        );
 end entity;
 
 -- Architecture for the clock divider.
@@ -27,10 +32,10 @@ begin
     process(in_clock)
     begin  
         if(in_clock = '1' and in_clock'event) then
-            if(counter = 50000) then
+            if(counter = split) then
                 temp <= '0';
 		        counter <= counter+1;
-            elsif(counter = 100000) then
+            elsif(counter = 2*split) then
                 temp<= '1';
                 counter <= 0;
             else

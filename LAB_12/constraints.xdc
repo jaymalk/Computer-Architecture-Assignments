@@ -15,6 +15,8 @@
 	 set_property IOSTANDARD LVCMOS33 [get_ports {register_number[3]}]
  set_property PACKAGE_PIN R3 [get_ports {lur}]					
 	 set_property IOSTANDARD LVCMOS33 [get_ports {lur}]
+ set_property PACKAGE_PIN T2 [get_ports {lenc}]					
+         set_property IOSTANDARD LVCMOS33 [get_ports {lenc}]
 
 
 

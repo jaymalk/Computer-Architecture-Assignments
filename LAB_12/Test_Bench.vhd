@@ -13,7 +13,7 @@ entity TestBench is
             -- Buttons for control
             Step_Button, Go_Button, Instr_Button, IRQ_Switch, RST_Button: in std_logic := '0';
             -- Register Status
-            lur : in std_logic := '0'; --Load Upper Register For Output
+            lur, lenc : in std_logic := '0'; --Load Upper Register (or Load Encoding) For Output
             -- Specifying the reister number
             register_number: in std_logic_vector(3 downto 0) := "0000";
         -- Output
@@ -34,8 +34,8 @@ architecture Behavioral of TestBench is
     -- Signal for step, go, instr response, for the testing FSM
     signal step, go, instr, irq, rst : std_logic := '0';
 
-    -- Slower clock for debouncing
-    signal slow_clock : std_logic;
+    -- Slower clocks for debouncing, display and cpu
+    signal slow_clock, cpu_clock : std_logic;
 
     -- Write enable (For data memory)
     signal Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3 : std_logic;
@@ -150,8 +150,13 @@ architecture Behavioral of TestBench is
     
     -- Component representing the clock divider, giving clock for debouncer
     component clock_divider is
-        port(in_clock, reset: in std_logic;
-            slow_clock: out std_logic);
+        port(
+        -- Input Parameters
+        in_clock, reset: in std_logic;
+        split: in integer;
+        -- Output Parameters
+        slow_clock: out std_logic
+        );
     end component;
 
 begin
@@ -159,9 +164,11 @@ begin
     irq <= IRQ_Switch;
     
     -- Selecting visible output
-    with lur select LED_Select <=
-        RF_For_Display(to_integer(unsigned(register_number)))(31 downto 16) when '1',
-        RF_For_Display(to_integer(unsigned(register_number)))(15 downto 0) when others;
+    LED_Select <=
+        RF_For_Display(to_integer(unsigned(register_number)))(31 downto 16) when (lur ='1' and lenc = '0') else
+        RF_For_Display(to_integer(unsigned(register_number)))(15 downto 0)  when (lur ='0' and lenc = '0') else
+        Instruction_From_IM(31 downto 16) when (lur ='1' and lenc = '1') else
+        Instruction_From_IM(15 downto 0)  when (lur ='0' and lenc = '1');
     -- Assigning from holder
     LED_Output <= LED_Select;
 
@@ -179,15 +186,29 @@ begin
 
 ------------------------------------------------------------
     -- Mapping the parameters of Clock divider
+        -- Getting the clock for buttons and segmented display
     SLOW: clock_divider
        port map
         (
         -- Input parameters
             in_clock => test_clock,
             reset => rst,
+            split => 50000,
         -- Output parameters
             slow_clock => slow_clock
         );
+
+        -- Getting the clock for CPU
+    CPU_CLK: clock_divider
+        port map
+         (
+         -- Input parameters
+             in_clock => test_clock,
+             reset => rst,
+             split => 5,
+         -- Output parameters
+             slow_clock => cpu_clock
+         );
 
 ------------------------------------------------------------
 -- BUTTONS
@@ -210,7 +231,7 @@ begin
         (
         -- Input Parameters
             -- clock and reset
-            main_clock => test_clock,
+            main_clock => cpu_clock,
             -- Instruction from IM
             Instruction_From_IM => Instruction_From_IM,
             -- Data from DM
