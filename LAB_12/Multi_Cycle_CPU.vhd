@@ -201,10 +201,8 @@ begin
     -- Concurrent assignment of the signals from positions in the instruction (preserved one) --
 
     -- Setting irq and rst, from input parameters
-    irq <= '0' when irq_in = 'U' else
-            irq_in;
-    rst <= '0' when rst_in = 'U' else
-            rst_in;
+    irq <= irq_in;
+    rst <= rst_in;
     
     -- Setting state w.r.t mode bits
     state <= usr when mode = "10000" else

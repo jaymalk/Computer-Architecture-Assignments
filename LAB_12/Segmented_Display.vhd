@@ -27,15 +27,7 @@ architecture visual of display is
     signal main : std_logic_vector(3 downto 0) := "0000";
 begin
 
-    -- Assigning values to anode
-    anodes <= "1110" when state = 0 else
-              "1101" when state = 1 else
-              "1011" when state = 2 else
-              "0111" when state = 3;
-    anode <= anodes;
-
-    -- Setting the correct register output for display
-    main <= digit(state);
+    
     
     -- Value associated with each part
     digit(3) <= value(15 downto 12);
@@ -66,6 +58,19 @@ begin
                 when others => outp <=  "1111111";
             end case;
             state <= ((state+1) rem 4);
+            -- Assigning values to anode
+            case state is
+                when 0 => anodes <= "1110";
+                when 1 => anodes <= "1101";
+                when 2 => anodes <= "1011";
+                when 3 => anodes <= "0111";
+                when others => anodes <= "1111";
+            end case;
+            -- Assigning the orignial anode
+            anode <= anodes;
+
+            -- Setting the correct register output for display
+            main <= digit(state);
         end if;
     end process;
 end architecture visual;
