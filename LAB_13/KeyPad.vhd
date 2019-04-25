@@ -14,9 +14,7 @@ entity keypad is
         ports : inout std_logic_vector(7 downto 0);
         -- Output Parameters
             -- Decoded Key
-        key_pressed: out std_logic_vector(3 downto 0);
-            -- Change Parameter (for IRQ)
-        change : out std_logic := '0'
+        key_pressed: out std_logic_vector(3 downto 0)
     );
 end entity;
 
@@ -24,7 +22,7 @@ end entity;
 architecture input of keypad is
 
     -- Signal for columns and rows.
-signal row, col, last_row : std_logic_vector(3 downto 0) := "1111";
+signal row, col : std_logic_vector(3 downto 0) := "1111";
     -- Decoded Value
 signal result : std_logic_vector(3 downto 0); -- Default : 0
     -- Stage decider
@@ -40,13 +38,6 @@ begin
 
     process(slow_clock)
         begin
-            if(stage = "1111" and (last_row = row or row = "1111")) then
-                change <= '0';
-                last_row <= row;
-            elsif (stage = "1111") then
-                change <= '1';
-                last_row <= row;
-            end if;
             if(slow_clock = '1' and slow_clock'event) then
                 stage <= stage + 1;
                 if (stage = "0000") then

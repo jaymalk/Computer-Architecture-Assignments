@@ -68,7 +68,8 @@ architecture Behavioral of TestBench is
     signal LED_Select : std_logic_vector(15 downto 0) := "0000000000000000";
 
     -- Signal for catching the key from the key board
-    signal key : std_logic_vector(3 downto 0) := "0000";
+    signal key, last_key : std_logic_vector(3 downto 0);
+    signal irq_check : std_logic_vector(2 downto 0) := 0;
     -- Data from CPU to be viewed on Segmented Display
     signal cpu_display : std_logic_vector(15 downto 0);
 
@@ -142,9 +143,7 @@ architecture Behavioral of TestBench is
             ports : inout std_logic_vector(7 downto 0);
             -- Output Parameters
                 -- Decoded Key
-            key_pressed: out std_logic_vector(3 downto 0);
-                -- Change Parameter (for IRQ)
-            change : out std_logic := '0'
+            key_pressed: out std_logic_vector(3 downto 0)
         );
     end component;
 
@@ -222,10 +221,24 @@ begin
             slow_clock => slow_clock,
             -- Output
             ports => ports,
-            key_pressed => key,
-            change => irq
+            key_pressed => key
         );
 
+------------------------------------------------------------
+-- A simple process for determining 'IRQ' status w.r.t to key pressed.
+process(cpu_clock, key)
+    begin
+        if(cpu_clock = '1' and cpu_clock'event) then
+            irq_check <= irq_check+1;
+            if (irq_check = "111") then
+                if (not (key = last_key)) then
+                    irq <= '1';
+                else
+                    irq <= '0';
+                end if;
+            end if;
+        end if;
+    end process;
 ------------------------------------------------------------
     -- Mapping the parameters of Clock divider
         -- Getting the clock for buttons and segmented display
