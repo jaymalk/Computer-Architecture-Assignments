@@ -38,88 +38,81 @@ begin
 
     process(slow_clock)
         begin
-            if (stage = "0000") then
-                -- Setting Column-1
-                col <= "0111";
+            if(slow_clock = '1' and slow_clock'event) then
                 stage <= stage + 1;
-            elsif (stage = "0010") then
-                -- Checking for rows (in C1)
-                -- Row-1
-                if row = "0111" then
-					result <= "0001";	--1
-				-- Row-2
-				elsif row = "1011" then
-					result <= "0100";   --4
-				-- Row-3
-				elsif row = "1101" then
-					result <= "0111";   --7
-				-- Row-4
-				elsif row = "1110" then
-                    result <= "0000";   --0  
+                if (stage = "0000") then
+                    -- Setting Column-1
+                    col <= "0111";
+                elsif (stage = "0010") then
+                    -- Checking for rows (in C1)
+                    -- Row-1
+                    if row = "0111" then
+                        result <= "0001";	--1
+                    -- Row-2
+                    elsif row = "1011" then
+                        result <= "0100";   --4
+                    -- Row-3
+                    elsif row = "1101" then
+                        result <= "0111";   --7
+                    -- Row-4
+                    elsif row = "1110" then
+                        result <= "0000";   --0  
+                    end if;
+                elsif (stage = "0100") then
+                    -- Setting Column-2
+                    col <= "1011";
+                elsif (stage = "0110") then
+                    -- Checking for rows (in C2)
+                    -- Row-1
+                    if row = "0111" then
+                        result <= "0010";	--2
+                    -- Row-2
+                    elsif row = "1011" then
+                        result <= "0101";   --5
+                    -- Row-3
+                    elsif row = "1101" then
+                        result <= "1000";   --8
+                    -- Row-4
+                    elsif row = "1110" then
+                        result <= "1111";   --F
+                    end if;
+                elsif (stage = "1000") then
+                    -- Setting Column-3
+                    col <= "1101";
+                elsif (stage = "1010") then
+                    -- Checking for rows (in C3)
+                    -- Row-1
+                    if row = "0111" then
+                        result <= "0011";	--3
+                    -- Row-2
+                    elsif row = "1011" then
+                        result <= "0110";   --6
+                    -- Row-3
+                    elsif row = "1101" then
+                        result <= "1001";   --9
+                    -- Row-4
+                    elsif row = "1110" then
+                        result <= "1110";   --E
+                    end if;
+                elsif (stage = "1100") then
+                    -- Setting Column-4
+                    col <= "1110";
+                elsif (stage = "1110") then
+                    -- Checking for rows (in C4)
+                    -- Row-1
+                    if row = "0111" then
+                        result <= "1010";	--A
+                    -- Row-2
+                    elsif row = "1011" then
+                        result <= "1011";   --B
+                    -- Row-3
+                    elsif row = "1101" then
+                        result <= "1100";   --C
+                    -- Row-4
+                    elsif row = "1110" then
+                        result <= "1101";   --D
+                    end if;
                 end if;
-                stage <= stage + 1;
-            elsif (stage = "0100") then
-                -- Setting Column-2
-                col <= "1011";
-                stage <= stage + 1;
-            elsif (stage = "0110") then
-                -- Checking for rows (in C2)
-                -- Row-1
-                if row = "0111" then
-					result <= "0010";	--2
-				-- Row-2
-				elsif row = "1011" then
-					result <= "0101";   --5
-				-- Row-3
-				elsif row = "1101" then
-					result <= "1000";   --8
-				-- Row-4
-				elsif row = "1110" then
-					result <= "1111";   --F
-                end if;
-                stage <= stage + 1;
-            elsif (stage = "1000") then
-                -- Setting Column-3
-                col <= "1101";
-                stage <= stage + 1;
-            elsif (stage = "1010") then
-                -- Checking for rows (in C3)
-                -- Row-1
-                if row = "0111" then
-					result <= "0011";	--3
-				-- Row-2
-				elsif row = "1011" then
-					result <= "0110";   --6
-				-- Row-3
-				elsif row = "1101" then
-					result <= "1001";   --9
-				-- Row-4
-				elsif row = "1110" then
-					result <= "1110";   --E
-                end if;
-                stage <= stage + 1;
-            elsif (stage = "1100") then
-                -- Setting Column-4
-                col <= "1110";
-                stage <= stage + 1;
-            elsif (stage = "1110") then
-                -- Checking for rows (in C4)
-                -- Row-1
-                if row = "0111" then
-					result <= "1010";	--A
-				-- Row-2
-				elsif row = "1011" then
-					result <= "1011";   --B
-				-- Row-3
-				elsif row = "1101" then
-					result <= "1100";   --C
-				-- Row-4
-				elsif row = "1110" then
-					result <= "1101";   --D
-                end if;
-                stage <= stage + 1;
-             else
-                stage <= stage +1 ;
             end if;
     end process;
 end architecture input;
