@@ -19,7 +19,7 @@ entity TestBench is
             
             --==== TEMP ====--
             --== Set key for checking if keyboard works ==--
-            set : in std_logic := "0";
+            sets : in std_logic := '0';
             
         -- Input/Output (mix)
             ports: inout std_logic_vector(7 downto 0);
@@ -189,7 +189,7 @@ begin
     
     -- Selecting visible output
     LED_Select <=
-        "000000000000"&key when set = '1' else
+        "000000000000"&key when sets = '1' else
         RF_For_Display(to_integer(unsigned(register_number)))(31 downto 16) when (lur ='1' and lenc = '0') else
         RF_For_Display(to_integer(unsigned(register_number)))(15 downto 0)  when (lur ='0' and lenc = '0') else
         Instruction_From_IM(31 downto 16) when (lur ='1' and lenc = '1') else

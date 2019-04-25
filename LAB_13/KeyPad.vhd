@@ -24,9 +24,9 @@ architecture input of keypad is
     -- Signal for columns and rows.
 signal row, col : std_logic_vector(3 downto 0) := "1111";
     -- Decoded Value
-signal result : std_logic_vector(3 downto 0) := "0000"; -- Default : 0
+signal result : std_logic_vector(3 downto 0); -- Default : 0
     -- Stage decider
-signal stage : st_logic_vector(3 downto 0) := "0000";  
+signal stage : std_logic_vector(3 downto 0) := "0000";  
 
 begin
     -- Assigning the key value
@@ -117,7 +117,9 @@ begin
 				elsif row = "1110" then
 					result <= "1101";   --D
                 end if;
-                stage <= "0000";
+                stage <= stage + 1;
+             else
+                stage <= stage +1 ;
             end if;
     end process;
 end architecture input;

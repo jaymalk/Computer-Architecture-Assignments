@@ -17,6 +17,26 @@
 	 set_property IOSTANDARD LVCMOS33 [get_ports {lur}]
  set_property PACKAGE_PIN T2 [get_ports {lenc}]					
          set_property IOSTANDARD LVCMOS33 [get_ports {lenc}]
+ set_property PACKAGE_PIN V16 [get_ports {sets}]					
+         set_property IOSTANDARD LVCMOS33 [get_ports {sets}]
+
+# Pmod JA (for keypad)
+ set_property PACKAGE_PIN J1 [get_ports {ports[0]}]					
+    set_property IOSTANDARD LVCMOS33 [get_ports {ports[0]}]
+set_property PACKAGE_PIN L2 [get_ports {ports[1]}]                    
+    set_property IOSTANDARD LVCMOS33 [get_ports {ports[1]}]
+set_property PACKAGE_PIN J2 [get_ports {ports[2]}]                    
+    set_property IOSTANDARD LVCMOS33 [get_ports {ports[2]}]
+set_property PACKAGE_PIN G2 [get_ports {ports[3]}]                    
+    set_property IOSTANDARD LVCMOS33 [get_ports {ports[3]}]
+set_property PACKAGE_PIN H1 [get_ports {ports[4]}]                    
+    set_property IOSTANDARD LVCMOS33 [get_ports {ports[4]}]
+set_property PACKAGE_PIN K2 [get_ports {ports[5]}]                    
+    set_property IOSTANDARD LVCMOS33 [get_ports {ports[5]}]
+set_property PACKAGE_PIN H2 [get_ports {ports[6]}]                    
+    set_property IOSTANDARD LVCMOS33 [get_ports {ports[6]}]
+set_property PACKAGE_PIN G3 [get_ports {ports[7]}]                    
+    set_property IOSTANDARD LVCMOS33 [get_ports {ports[7]}]
 
 
 
