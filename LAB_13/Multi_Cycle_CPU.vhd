@@ -15,6 +15,8 @@ entity CPU_MULTI is
             step, go, instr: in std_logic;
                 -- External Exception Handle (IRQ and RESET)
             irq_in, rst_in : in std_logic;
+                -- Input Key Value (from keypad)
+            in_key : in std_logic_vector(3 downto 0);
 
             -- Output Parameters
                 -- Address to be sent to instruction memory to get Instruction (PC is sent)
@@ -23,6 +25,8 @@ entity CPU_MULTI is
             Address_To_DM: out integer;
                 -- Data to be sent to data memory, used be str
             Data_To_DM: out std_logic_vector(31 downto 0);
+                -- Vector for showing display from CPU
+            Display_From_CPU: out std_logic_vector(15 downto 0);
                 -- Deciding for write and fetch from data memory
             Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3: out std_logic;
                 -- dummy RF to be used outside
@@ -207,6 +211,9 @@ begin
     -- Setting state w.r.t mode bits
     state <= usr when mode = "10000" else
              svc when mode = "10011";
+
+    -- Setting display output
+    Display_From_CPU <= RF(12);
                  
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);
@@ -391,10 +398,12 @@ begin
                     when exception_handle =>
                         -- Saving return address in R14_svc
                         R14_svc <= RF(15);
+                        if(state = usr) then
                         -- Saving CPSR in SPSR_svc
-                        SPSR_svc <= CPSR;
+                            SPSR_svc <= CPSR;
                         -- Setting new mode
-                        mode <= "10011";
+                            mode <= "10011";
+                        end if;
                         -- Disabling IRQ_enable
                         IRQ_disable <= '1';
                         -- Setting Address
@@ -406,6 +415,7 @@ begin
                             RF(15) <= "00000000000000000000000000000010";
                         else -- irqexn
                             RF(15) <= "00000000000000000000000000000110";
+                            RF(2) <=  "0000000000000000000000000000" & in_key;
                         end if;
                         -- Starting again and settting flow to done stage
                         stage <= common_first;

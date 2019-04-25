@@ -11,7 +11,7 @@ entity TestBench is
         -- Input parameters
             test_clock : in std_logic;
             -- Buttons for control
-            Step_Button, Go_Button, Instr_Button, IRQ_Switch, RST_Button: in std_logic := '0';
+            Step_Button, Go_Button, Instr_Button, RST_Button: in std_logic := '0';
             -- Register Status
             lur, lenc : in std_logic := '0'; --Load Upper Register (or Load Encoding) For Output
             -- Specifying the reister number
@@ -69,6 +69,8 @@ architecture Behavioral of TestBench is
 
     -- Signal for catching the key from the key board
     signal key : std_logic_vector(3 downto 0) := "0000";
+    -- Data from CPU to be viewed on Segmented Display
+    signal cpu_display : std_logic_vector(15 downto 0);
 
     -- Component representing the data memory 
         -- Needs 4 different copies for working with different COE's
@@ -140,36 +142,42 @@ architecture Behavioral of TestBench is
             ports : inout std_logic_vector(7 downto 0);
             -- Output Parameters
                 -- Decoded Key
-            key_pressed: out std_logic_vector(3 downto 0)
-            );
+            key_pressed: out std_logic_vector(3 downto 0);
+                -- Change Parameter (for IRQ)
+            change : out std_logic := '0'
+        );
     end component;
 
     -- Componenet representing the multi-cycle CPU
     component CPU_MULTI is
         Port (
-                -- Input Parameters
-                main_clock: in std_logic;
-                    -- Instruction from instruction memory
-                Instruction_From_IM: in std_logic_vector(31 downto 0);
-                    -- Data from data memory, to be used by str
-                Data_From_DM: in std_logic_vector(31 downto 0);
-                    -- Variables which handle user input for testing FSM
-                step, go, instr: in std_logic;
-                    -- External Exception Handle (IRQ and RESET)
-                irq_in, rst_in : in std_logic;
-    
-                -- Output Parameters
-                    -- Address to be sent to instruction memory to get Instruction (PC is sent)
-                Address_To_IM: out integer;
-                    -- Address to be sent to data memory to get data, used by ldr
-                Address_To_DM: out integer;
-                    -- Data to be sent to data memory, used be str
-                Data_To_DM: out std_logic_vector(31 downto 0);
-                    -- Deciding for write and fetch from data memory
-                Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3: out std_logic;
-                    -- dummy RF to be used outside
-                RF_For_Display: out register_file
-              );
+            -- Input Parameters
+            main_clock: in std_logic;
+                -- Instruction from instruction memory
+            Instruction_From_IM: in std_logic_vector(31 downto 0);
+                -- Data from data memory, to be used by str
+            Data_From_DM: in std_logic_vector(31 downto 0);
+                -- Variables which handle user input for testing FSM
+            step, go, instr: in std_logic;
+                -- External Exception Handle (IRQ and RESET)
+            irq_in, rst_in : in std_logic;
+                -- Input Key Value (from keypad)
+            in_key : in std_logic_vector(3 downto 0);
+
+            -- Output Parameters
+                -- Address to be sent to instruction memory to get Instruction (PC is sent)
+            Address_To_IM: out integer;
+                -- Address to be sent to data memory to get data, used by ldr
+            Address_To_DM: out integer;
+                -- Data to be sent to data memory, used be str
+            Data_To_DM: out std_logic_vector(31 downto 0);
+                -- Vector for showing display from CPU
+            Display_From_CPU: out std_logic_vector(15 downto 0);
+                -- Deciding for write and fetch from data memory
+            Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3: out std_logic;
+                -- dummy RF to be used outside
+            RF_For_Display: out register_file
+          );
     end component;
     
     -- Component representing the clock divider, giving clock for debouncer
@@ -184,9 +192,6 @@ architecture Behavioral of TestBench is
     end component;
 
 begin
-    -- Setting irq
-    irq <= IRQ_Switch;
-    
     -- Selecting visible output
     LED_Select <=
         "000000000000"&key when sets = '1' else
@@ -203,7 +208,7 @@ begin
         Port map (
             -- Input Parameters
               clock => slow_clock,
-              value => LED_Select,
+              value => cpu_display,
             -- Output Parameters
               outp => seg,
               anode => an
@@ -217,7 +222,8 @@ begin
             slow_clock => slow_clock,
             -- Output
             ports => ports,
-            key_pressed => key
+            key_pressed => key,
+            change => irq
         );
 
 ------------------------------------------------------------
@@ -279,6 +285,8 @@ begin
             -- Exceptions
             irq_in => irq,
             rst_in => rst,
+            -- Input Key
+            in_key => key,
         -- Output Parameters
             -- Address to IM
             Address_To_IM => Address_To_IM,
@@ -286,6 +294,8 @@ begin
             Address_To_DM => Address_To_DM,
             -- Data to DM
             Data_To_DM => Data_To_DM,
+            -- Display From CPU
+            Display_From_CPU => cpu_display,
             -- Write enable for DM
             Write_Enable_0 => Write_Enable_0,
             Write_Enable_1 => Write_Enable_1,
