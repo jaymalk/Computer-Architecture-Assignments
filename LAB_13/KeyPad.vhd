@@ -40,9 +40,10 @@ begin
 
     process(slow_clock)
         begin
-            if(last_row = row or row = "1111") then
+            if(stage = "1111" and (last_row = row or row = "1111")) then
                 change <= '0';
-            else
+                last_row <= row;
+            elsif (stage = "1111") then
                 change <= '1';
                 last_row <= row;
             end if;

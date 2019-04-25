@@ -12,7 +12,7 @@ entity CPU_MULTI is
                 -- Data from data memory, to be used by str
             Data_From_DM: in std_logic_vector(31 downto 0);
                 -- Variables which handle user input for testing FSM
-            step, go, instr: in std_logic;
+            step, go, instr, halt: in std_logic;
                 -- External Exception Handle (IRQ and RESET)
             irq_in, rst_in : in std_logic;
                 -- Input Key Value (from keypad)
@@ -213,7 +213,7 @@ begin
              svc when mode = "10011";
 
     -- Setting display output
-    Display_From_CPU <= RF(12);
+    Display_From_CPU <= RF(12)(15 downto 0);
                  
     -- Conditions and F_Class
     Condition <= instruction(31 downto 28);
@@ -792,6 +792,8 @@ begin
                     when cont =>    if(instruction = "00000000000000000000000000000000") then
                                         flow <= done;
                                     -- The above instruction is always check before the third stage is executed, thus complying with ASM
+                                    elsif (halt = '1') then
+                                        flow <= done;
                                     else
                                         flow <= cont;
                                     end if;

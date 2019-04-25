@@ -3,8 +3,6 @@
 	 create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports test_clock]
  
    #Switches
- set_property PACKAGE_PIN V17 [get_ports IRQ_Switch]					
-	 set_property IOSTANDARD LVCMOS33 [get_ports IRQ_Switch]
  set_property PACKAGE_PIN W2 [get_ports {register_number[0]}]					
 	 set_property IOSTANDARD LVCMOS33 [get_ports {register_number[0]}]
  set_property PACKAGE_PIN U1 [get_ports {register_number[1]}]					
@@ -105,6 +103,8 @@ set_property PACKAGE_PIN G3 [get_ports {ports[7]}]
 
 
   # Buttons
+ set_property PACKAGE_PIN T18 [get_ports Halt_Button]						
+     set_property IOSTANDARD LVCMOS33 [get_ports Halt_Button]
  set_property PACKAGE_PIN U18 [get_ports RST_Button]						
 	 set_property IOSTANDARD LVCMOS33 [get_ports RST_Button]
  set_property PACKAGE_PIN W19 [get_ports Step_Button]						

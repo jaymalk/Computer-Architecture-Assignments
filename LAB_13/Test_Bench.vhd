@@ -11,7 +11,7 @@ entity TestBench is
         -- Input parameters
             test_clock : in std_logic;
             -- Buttons for control
-            Step_Button, Go_Button, Instr_Button, RST_Button: in std_logic := '0';
+            Step_Button, Go_Button, Instr_Button, RST_Button, Halt_Button: in std_logic := '0';
             -- Register Status
             lur, lenc : in std_logic := '0'; --Load Upper Register (or Load Encoding) For Output
             -- Specifying the reister number
@@ -39,7 +39,7 @@ end TestBench;
 architecture Behavioral of TestBench is
 
     -- Signal for step, go, instr response, for the testing FSM
-    signal step, go, instr, irq, rst : std_logic := '0';
+    signal step, go, instr, halt, irq, rst : std_logic := '0';
 
     -- Slower clocks for debouncing, display and cpu
     signal slow_clock, cpu_clock : std_logic;
@@ -158,7 +158,7 @@ architecture Behavioral of TestBench is
                 -- Data from data memory, to be used by str
             Data_From_DM: in std_logic_vector(31 downto 0);
                 -- Variables which handle user input for testing FSM
-            step, go, instr: in std_logic;
+            step, go, instr, halt: in std_logic;
                 -- External Exception Handle (IRQ and RESET)
             irq_in, rst_in : in std_logic;
                 -- Input Key Value (from keypad)
@@ -262,6 +262,8 @@ begin
         Go_Component: entity  work.debouncer(architecture_debouncer) port map(Go_Button, slow_clock, go);
         -- Instr button
         Instr_Component: entity  work.debouncer(architecture_debouncer) port map(Instr_Button, slow_clock, instr);
+        -- Halt Button
+        Halt_Component: entity  work.debouncer(architecture_debouncer) port map(Halt_Button, slow_clock, halt);
         -- RST button
         RST_Component: entity  work.debouncer(architecture_debouncer) port map(RST_Button, slow_clock, rst);
 
@@ -282,6 +284,7 @@ begin
             step => step,
             go => go,
             instr => instr,
+            halt => halt,
             -- Exceptions
             irq_in => irq,
             rst_in => rst,
