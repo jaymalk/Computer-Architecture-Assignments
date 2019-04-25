@@ -5,7 +5,7 @@ use ieee.std_logic_unsigned.all;
 
 
 -- SUMMARY
--- This divider, provides a clock which is 500,000 times slower
+-- This divider, provides a clock which is '$split' times slower
 -- than the original (native) clock of the system.
 -- Using this buttons have a better chance of being recognised in
 -- correct way, without any fluctuations.

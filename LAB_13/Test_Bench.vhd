@@ -16,6 +16,13 @@ entity TestBench is
             lur, lenc : in std_logic := '0'; --Load Upper Register (or Load Encoding) For Output
             -- Specifying the reister number
             register_number: in std_logic_vector(3 downto 0) := "0000";
+            
+            --==== TEMP ====--
+            --== Set key for checking if keyboard works ==--
+            set : in std_logic := "0";
+            
+        -- Input/Output (mix)
+            ports: inout std_logic_vector(7 downto 0);
         -- Output
             -- LED outputs
             LED_Output : out std_logic_vector(15 downto 0) := "0000000000000000";
@@ -59,6 +66,9 @@ architecture Behavioral of TestBench is
 
     -- Mediator signals for LED_Output
     signal LED_Select : std_logic_vector(15 downto 0) := "0000000000000000";
+
+    -- Signal for catching the key from the key board
+    signal key : std_logic_vector(3 downto 0) := "0000";
 
     -- Component representing the data memory 
         -- Needs 4 different copies for working with different COE's
@@ -118,7 +128,21 @@ architecture Behavioral of TestBench is
               anode: out std_logic_vector(3 downto 0)
              );
       end component;
-      
+
+    -- Component for interfacing with keypad
+    component keypad is
+        port(
+            -- Input Parameters
+                -- Clock
+            slow_clock: in std_logic;
+                -- Ports read from JA
+                -- (rows : in) || (columns : out)
+            ports : inout std_logic_vector(7 downto 0);
+            -- Output Parameters
+                -- Decoded Key
+            key_pressed: out std_logic_vector(3 downto 0)
+            );
+    end component;
 
     -- Componenet representing the multi-cycle CPU
     component CPU_MULTI is
@@ -165,6 +189,7 @@ begin
     
     -- Selecting visible output
     LED_Select <=
+        "000000000000"&key when set = '1' else
         RF_For_Display(to_integer(unsigned(register_number)))(31 downto 16) when (lur ='1' and lenc = '0') else
         RF_For_Display(to_integer(unsigned(register_number)))(15 downto 0)  when (lur ='0' and lenc = '0') else
         Instruction_From_IM(31 downto 16) when (lur ='1' and lenc = '1') else
@@ -183,6 +208,17 @@ begin
               outp => seg,
               anode => an
              );
+
+------------------------------------------------------------
+    -- Keypad entry
+    Keypad_Module : keypad
+        Port map (
+            -- Input
+            slow_clock => slow_clock,
+            -- Output
+            ports => ports,
+            key_pressed => key
+        );
 
 ------------------------------------------------------------
     -- Mapping the parameters of Clock divider
