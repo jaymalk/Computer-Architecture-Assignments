@@ -201,18 +201,17 @@ architecture Behavioral of CPU_MULTI is
     type exception_type is (rstexn, undexn, swiexn, irqexn, noexn);
     signal exception : exception_type := noexn;
     signal irq, rst : std_logic := '0';
-    signal irq_stage : std_logic_vector(1 downto 0);
+    signal irq_stage : integer;
 
 begin
 
     -- Concurrent assignment of the signals from positions in the instruction (preserved one) --
 
     -- Setting irq and rst, from input parameters
-    irq <= irq_in;
     rst <= rst_in;
 
     -- Setting current anode value from R9
-    Anode <= R(9)(3 downto 0);
+    Anode <= RF(9)(3 downto 0);
     
     -- Setting state w.r.t mode bits
     state <= usr when mode = "10000" else
@@ -393,16 +392,15 @@ begin
     process(refresh)
     begin
         if(refresh='1' and refresh'event) then
-            if(irq_stage = "00") then
+            if(irq_stage = 4) then
                 irq <= '1';
-                -- Assigning the display value
-                RF(11) <=  "0000000000000000000000000000" & in_key;
+                irq_stage <= 0;
             else
                 irq <= '0';
+                irq_stage <= irq_stage + 1;
             end if;
-            irq_stage <= irq_stage + 1;
         end if;
-    end process
+    end process;
 
     -- BOTH FMS'S FOR STAGE && FLOW_COMMAND
         -- WORKING FSM FOR STEP(ONE/INSTR)/CONTINUOUS
@@ -436,6 +434,11 @@ begin
                             RF(15) <= "00000000000000000000000000000010";
                         else -- irqexn
                             RF(15) <= "00000000000000000000000000000110";
+                            Data_To_DM <= "0000000000000000000000000000"&in_key;
+                            Write_Enable_0 <= '1';
+                            Write_Enable_1 <= '1';
+                            Write_Enable_2 <= '1';
+                            Write_Enable_3 <= '1';
                         end if;
                         -- Starting again and settting flow to done stage
                         stage <= common_first;

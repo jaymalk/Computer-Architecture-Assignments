@@ -20,7 +20,8 @@ Reset:			@ Address 0x040
 	mov r10, #0x10
 	mov sp, r10, LSL #6
     mov r0, #0x10
-	msr cpsr, r0		    @ User mode set with IRQ ENABLED
+    andeq r0,r0,r0
+	@ msr cpsr, r0		    @ User mode set with IRQ ENABLED
 	b User
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 Undef:	
@@ -78,7 +79,7 @@ Digit_4:
     orr r1, r1, r4
     movs pc, lr 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-gap3:	.space 0x314
+gap3:	.space 0x324
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 User:				                @ ADDRESS #400
     @Initialise user sp to 0x1000
@@ -113,17 +114,6 @@ User:				                @ ADDRESS #400
         @Position (Left Extreme)
     mov r2, #3
     mov r1, r3
-    swi 0
-    mov r12, r1         @ Display!
-    
-    @ Demonstrating (DISPLAY-4)
-        @ Setting (4-Digits)
-    mov r1, #0
-    mov r2, #7
-    mov r3, #8
-    mov r4, #6
-    @ Displaying
-    mov r0, #3
     swi 0
     mov r12, r1         @ Display!
 	.end

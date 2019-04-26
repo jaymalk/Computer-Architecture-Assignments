@@ -57,10 +57,10 @@ begin
 
             -- Setting the correct register output for display
             case anode is 
-                when "1110" => main <= digits(0);
-                when "1101" => main <= digits(1);
-                when "1011" => main <= digits(2);
-                when "0111" => main <= digits(3);
+                when "1110" => main <= digit(0);
+                when "1101" => main <= digit(1);
+                when "1011" => main <= digit(2);
+                when "0111" => main <= digit(3);
                 when others => main <= "0000";
             end case;
             
