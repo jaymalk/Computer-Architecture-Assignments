@@ -40,8 +40,8 @@ IRQ:
     mov r1, #1
         @ Disabling IRQ
     mrs r0, cpsr
-    mov r2, #0x80
-    eor r0, r0, r2
+    mov r3, #0x80
+    eor r0, r0, r3
     msr cpsr, r0
     @ AT THIS POINT R2 AUTOMATICALLY GETS VALUE (HARDWARE SETTING) **
 	mov pc, lr
@@ -103,7 +103,7 @@ User:				                @ ADDRESS #400
     @ Read Complete
     mov r3, r2
     @ Displaying at different positions
-    mov r0, #1          @ Display-1 mode
+    mov r0, #2          @ Display-1 mode
         @Position (Right Extreme)
     mov r2, #0
     mov r1, r3
