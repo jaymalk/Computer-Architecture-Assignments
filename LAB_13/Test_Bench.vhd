@@ -42,7 +42,7 @@ architecture Behavioral of TestBench is
     signal step, go, instr, halt, irq, rst : std_logic := '0';
 
     -- Slower clocks for debouncing, display and cpu
-    signal slow_clock, cpu_clock : std_logic;
+    signal slow_clock, second_clock, cpu_clock : std_logic;
 
     -- Write enable (For data memory)
     signal Write_Enable_0, Write_Enable_1, Write_Enable_2, Write_Enable_3 : std_logic;
@@ -69,7 +69,7 @@ architecture Behavioral of TestBench is
 
     -- Signal for catching the key from the key board
     signal key, last_key : std_logic_vector(3 downto 0);
-    signal irq_check : std_logic_vector(2 downto 0) := "000";
+    signal irq_check, refresh_check : integer := 1;
     signal is_pressed: std_logic;
     -- Data from CPU to be viewed on Segmented Display
     signal cpu_display : std_logic_vector(15 downto 0);
@@ -228,21 +228,21 @@ begin
         );
 
 ------------------------------------------------------------
--- A simple process for determining 'IRQ' status w.r.t to key pressed.
--- process(cpu_clock, key)
---     begin
---         if(cpu_clock = '1' and cpu_clock'event) then
---             irq_check <= irq_check+1;
---             if (irq_check = "111") then
---                 if (not (key = last_key)) then
---                     irq <= '1';
---                 else
---                     irq <= '0';
---                 end if;
---             end if;
---         end if;
---     end process;
-irq <= is_pressed;
+---- A simple process for determining 'IRQ' status w.r.t to key pressed.
+process(cpu_clock, key)
+    begin
+        if(cpu_clock = '1' and cpu_clock'event) then
+            irq_check <= ((irq_check+1) mod 10);
+            if (irq_check = 0) then
+                if (not (key = last_key)) then
+                    irq <= '1';
+                    last_key <= key;
+                else    
+                    irq <= '0';
+                end if;
+            end if;
+        end if;
+    end process;
 ------------------------------------------------------------
     -- Mapping the parameters of Clock divider
         -- Getting the clock for buttons and segmented display
@@ -256,7 +256,6 @@ irq <= is_pressed;
         -- Output parameters
             slow_clock => slow_clock
         );
-
         -- Getting the clock for CPU
     CPU_CLK: clock_divider
         port map

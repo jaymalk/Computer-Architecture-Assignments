@@ -424,7 +424,7 @@ begin
                     -- First stage (Common in all)
                     when common_first =>
                         if(flow = onestep or flow = oneinstr or flow = cont) then
-                            if(irq = '1' and not IRQ_disable = '1') then -- Instruction not exceuted and saved
+                            if(irq = '1' and not (IRQ_disable = '1' or exception = irqexn)) then -- Instruction not exceuted and saved
                                 exception <= irqexn;
                                 stage <= exception_handle;
                             else
