@@ -31,31 +31,31 @@ add_force {/TestBench/test_clock} -radix hex {1 0ns} {0 5000ps} -repeat_every 10
 
 # Complete Reset
 add_force {/TestBench/step} -radix bin {0 0ns}
-run 10ns
+run 20ns
 add_force {/TestBench/go} -radix bin {0 0ns}
-run 10ns
+run 20ns
 add_force {/TestBench/instr} -radix bin {0 0ns}
-run 10ns
+run 20ns
 # add_force {/TestBench/reset} -radix bin {1 0ns}
 # run 10ns
 
 
 #Run One instr
 add_force {/TestBench/instr} -radix bin {1 0ns}
-run 60ns
+run 120ns
 add_force {/TestBench/instr} -radix bin {0 0ns}
-run 10ns
+run 20ns
 
 #Run One step
 add_force {/TestBench/step} -radix bin {1 0ns}
-run 30ns
+run 60ns
 add_force {/TestBench/step} -radix bin {0 0ns}
-run 10ns
+run 20ns
 
 # For loop
 for {set i 0} {$i < 15} {incr i} {
     add_force {/TestBench/instr} -radix bin {1 0ns}
-    run 60ns
+    run 120ns
     add_force {/TestBench/instr} -radix bin {0 0ns}
-    run 10ns
+    run 20ns
 }

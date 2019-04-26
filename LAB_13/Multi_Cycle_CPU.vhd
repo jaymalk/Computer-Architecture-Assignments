@@ -792,7 +792,7 @@ begin
                     when cont =>    if(instruction = "00000000000000000000000000000000") then
                                         flow <= done;
                                     -- The above instruction is always check before the third stage is executed, thus complying with ASM
-                                    elsif (halt = '1') then
+                                    elsif (halt = '1' and stage = common_first) then -- Introducing halt instructions through board
                                         flow <= done;
                                     else
                                         flow <= cont;

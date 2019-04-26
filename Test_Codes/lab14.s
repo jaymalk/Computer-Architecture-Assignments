@@ -12,8 +12,8 @@ gap2:	.space 0x024
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 Reset:			@ Address 0x040
     @ Setting starter value on display
-    mov r1, #0xFF
-    orr r1, r1, r1, LSL #8
+    mov r12, #0xFF
+    orr r12, r12, r12, LSL #8
     @ Initialise supervisor sp to 0x400
 	mov r10, #0x10
 	mov sp, r10, LSL #6

@@ -69,7 +69,8 @@ architecture Behavioral of TestBench is
 
     -- Signal for catching the key from the key board
     signal key, last_key : std_logic_vector(3 downto 0);
-    signal irq_check : std_logic_vector(2 downto 0) := 0;
+    signal irq_check : std_logic_vector(2 downto 0) := "000";
+    signal is_pressed: std_logic;
     -- Data from CPU to be viewed on Segmented Display
     signal cpu_display : std_logic_vector(15 downto 0);
 
@@ -143,7 +144,8 @@ architecture Behavioral of TestBench is
             ports : inout std_logic_vector(7 downto 0);
             -- Output Parameters
                 -- Decoded Key
-            key_pressed: out std_logic_vector(3 downto 0)
+            key_pressed: out std_logic_vector(3 downto 0);
+            pressed: out std_logic
         );
     end component;
 
@@ -221,24 +223,26 @@ begin
             slow_clock => slow_clock,
             -- Output
             ports => ports,
-            key_pressed => key
+            key_pressed => key,
+            pressed => is_pressed
         );
 
 ------------------------------------------------------------
 -- A simple process for determining 'IRQ' status w.r.t to key pressed.
-process(cpu_clock, key)
-    begin
-        if(cpu_clock = '1' and cpu_clock'event) then
-            irq_check <= irq_check+1;
-            if (irq_check = "111") then
-                if (not (key = last_key)) then
-                    irq <= '1';
-                else
-                    irq <= '0';
-                end if;
-            end if;
-        end if;
-    end process;
+-- process(cpu_clock, key)
+--     begin
+--         if(cpu_clock = '1' and cpu_clock'event) then
+--             irq_check <= irq_check+1;
+--             if (irq_check = "111") then
+--                 if (not (key = last_key)) then
+--                     irq <= '1';
+--                 else
+--                     irq <= '0';
+--                 end if;
+--             end if;
+--         end if;
+--     end process;
+irq <= is_pressed;
 ------------------------------------------------------------
     -- Mapping the parameters of Clock divider
         -- Getting the clock for buttons and segmented display
@@ -260,7 +264,7 @@ process(cpu_clock, key)
          -- Input parameters
              in_clock => test_clock,
              reset => rst,
-             split => 5,
+             split => 1,
          -- Output parameters
              slow_clock => cpu_clock
          );
